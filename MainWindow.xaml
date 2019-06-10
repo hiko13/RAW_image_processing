@@ -1,0 +1,283 @@
+﻿<Window x:Class="image_processing.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal" 
+        TextOptions.TextRenderingMode="Auto"        
+        
+        FontFamily="{DynamicResource MaterialDesignFont}"
+
+        mc:Ignorable="d"
+        Title="HeavyRoom" Height="702.326" Width="1083.256" Background="#1F1F1F"  AllowDrop="True" DragEnter="event_DragEnter" Drop="event_Drop" KeyDown="Window_KeyDown"
+       >
+    <!--Background="{DynamicResource MaterialDesignPaper}"-->
+
+    <Grid >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="248*"/>
+            <RowDefinition Height="291*"/>
+            <RowDefinition Height="103*"/>
+            <RowDefinition Height="33"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="46"/>
+            <ColumnDefinition Width="798*"/>
+            <ColumnDefinition Width="235"/>
+        </Grid.ColumnDefinitions>
+
+
+
+        <Slider 
+            x:Name="Total_Offset_slider"
+            Maximum="33476"
+            Minimum="-33676"
+            LargeChange="1024"
+             VerticalAlignment="Top"
+            Value="0" Margin="24.5,124,24.5,0" RenderTransformOrigin="0.5,0.379"
+            ValueChanged="Total_Offset_ValueChanged" Grid.Column="2" Height="18"           
+            />
+        <Slider 
+            x:Name="R_Offset_slider"
+            Maximum="33476"
+            Minimum="-33476"
+            LargeChange="1024"
+             VerticalAlignment="Top"
+            Value="0" Margin="52.5,183,24.5,0" RenderTransformOrigin="0.5,0.379"
+            ValueChanged="R_Offset_ValueChanged" Grid.Column="2" Grid.Row="1" Height="18"           
+            />
+        <Slider 
+            x:Name="G_Offset_slider"
+            Maximum="33476"
+            Minimum="-33476"
+            LargeChange="1024"
+             VerticalAlignment="Top"
+            Value="0" Margin="52.5,216,24.5,0" RenderTransformOrigin="0.5,0.379"
+            ValueChanged="G_Offset_ValueChanged" Grid.Column="2" Grid.Row="1" Height="18"      
+            
+            />
+        <Slider 
+            x:Name="B_Offset_slider"
+            Maximum="33476"
+            Minimum="-33476"
+            LargeChange="1024"
+             VerticalAlignment="Top"
+            Value="0" Margin="52.5,249,24.5,0" 
+            ValueChanged="B_Offset_ValueChanged" Grid.Column="2" Grid.Row="1" Height="18"           
+            />
+        <Slider 
+            x:Name="Total_Gain_slider"
+            Maximum="128"
+            Minimum="1"
+            Value="1"
+            Margin="24.5,50,24.5,0" 
+             VerticalAlignment="Top"
+            ValueChanged="Total_Gain_ValueChanged" Grid.Column="2" Height="18"           
+            />
+        <Slider 
+            x:Name="R_Gain_slider"
+            Maximum="8"
+            Minimum="1"
+            Value="1"
+            VerticalAlignment="Top"
+            Margin="52.5,49,24.5,0" 
+            ValueChanged="R_Gain_ValueChanged" Grid.Column="2" Grid.Row="1" Height="18"           
+            />
+        <Slider 
+            x:Name="G_Gain_slider"
+            Maximum="8"
+            Minimum="1"
+            Value="1"
+             VerticalAlignment="Top"
+            Margin="52.5,79,24.5,0" 
+            ValueChanged="G_Gain_ValueChanged" Grid.Column="2" Grid.Row="1" Height="18"           
+            />
+        <Slider 
+            x:Name="B_Gain_slider"
+            Maximum="8"
+            Minimum="1"
+            Value="1"
+             VerticalAlignment="Top"
+            Margin="52.5,109,24.5,0" 
+            ValueChanged="B_Gain_ValueChanged" Grid.Column="2" Grid.Row="1" Height="18"           
+            />
+
+
+        <ProgressBar
+            x:Name="ProgressBar1"
+            Minimum="0"
+            Maximum="100"
+            Value="{Binding Progress}"
+             Grid.Column="1" Margin="55,49,69.5,54" Grid.Row="2"
+            Visibility="Hidden" Height="Auto"
+            />
+
+
+
+        <Button Content="実行" Margin="116,73,133.5,12" Click="Button_Click" Grid.Row="2" Grid.Column="1" Visibility="Collapsed" Height="Auto"/>
+
+        <Slider 
+            x:Name="Gamma_slider"
+            Maximum="4"
+            Minimum="0"
+            Value="1"
+            
+            VerticalAlignment="Top"
+            Margin="24.5,208,24.5,0" 
+            ValueChanged="Gamma_ValueChanged" Grid.Column="2" Height="18"           
+            />
+        <Border  BorderBrush="#888" Background="Transparent"
+                 BorderThickness="0, 1, 0, 0" Grid.Column="2" Margin="16.5,160,10.5,0" VerticalAlignment="Top" Height="33">
+            <TextBlock
+                    Text="Gamma" 
+                    VerticalAlignment="Center"
+                    FontSize="20px"
+                    Foreground="#AAA"
+                    FontWeight="Bold" Grid.Column="2" Margin="10,4,0,4" />
+        </Border>
+
+        <TextBlock
+            Text="Gain" 
+            FontSize="20px"
+            Foreground="#AAA"
+            FontWeight="Bold" Grid.Column="2" Margin="24.5,10,24.5,0" VerticalAlignment="Top" Height="24"/>
+        <TextBlock
+            Text="R" 
+            FontSize="20px"
+            Foreground="#AAA"
+            FontWeight="Bold" Grid.Column="2" Margin="24.5,43,187.5,0" Grid.Row="1" Height="36" VerticalAlignment="Top"/>
+        <TextBlock
+            Text="G" 
+            FontSize="20px"
+            Foreground="#AAA"
+            FontWeight="Bold" Grid.Column="2" Margin="24.5,75,187.5,0" Grid.Row="1" VerticalAlignment="Top" Height="24"/>
+        <TextBlock
+            Text="B" 
+            FontSize="20px"
+            Foreground="#AAA"
+            FontWeight="Bold" Grid.Column="2" Margin="24.5,105,187.5,0" Grid.Row="1" VerticalAlignment="Top" Height="24"/>
+
+
+
+
+
+
+        <Border  Background="#333" Grid.Row="0" Grid.Column="1"  Grid.RowSpan="4" ClipToBounds="True" Grid.ColumnSpan="2" Margin="0,0,234.5,0">
+
+            <Image Name="image_processed" 
+                   MouseWheel="Image_MouseWheel" 
+                   MouseLeftButtonDown="Image_MouseLeftButtonDown" 
+                   MouseMove="Image_MouseMove" 
+                   MouseLeftButtonUp="Image_MouseLeftButtonUp" 
+                   HorizontalAlignment="Center" Grid.Row="1" Grid.Column="1"  Grid.RowSpan="2" />
+        </Border>
+        <TextBlock
+            Text="B" 
+            FontSize="20px"
+            Foreground="#AAA"
+            FontWeight="Bold" Grid.Column="2" Margin="24.5,245,187.5,10" Grid.Row="1"/>
+        <TextBlock
+            Text="G" 
+            FontSize="20px"
+            Foreground="#AAA"
+            FontWeight="Bold" Grid.Column="2" Margin="24.5,210,187.5,46" Grid.Row="1"/>
+        <TextBlock
+            Text="R" 
+            FontSize="20px"
+            Foreground="#AAA"
+            FontWeight="Bold" Grid.Column="2" Margin="24.5,174,187.5,81" Grid.Row="1"/>
+        <TextBlock
+            Text="Color Gain" 
+            FontSize="20px"
+            Foreground="#AAA"
+            VerticalAlignment="Top"
+            FontWeight="Bold" Grid.Column="2" Margin="16.5,3,32.5,0" Grid.Row="1" Height="24"/>
+        <TextBlock
+            Text="Color Offset" 
+            FontSize="20px"
+            Foreground="#AAA"
+            VerticalAlignment="Top"
+            FontWeight="Bold" Grid.Column="2" Margin="16.5,141,32.5,0" Grid.Row="1" Height="24"/>
+        <TextBox
+            x:Name="Address_TextBox"
+            FontSize="20"
+            Grid.Column="2" Margin="24.5,63,24.5,12" 
+            Text="address"
+            TextAlignment="Center"
+            VerticalAlignment="Center" Height="28" Grid.Row="2"
+            Visibility="Collapsed"
+            />
+        <Border  BorderBrush="#888" Background="Transparent" VerticalAlignment="Top"
+            BorderThickness="0, 1, 0, 0" Grid.Column="2" Margin="16.5,84,10.5,0" Height="33">
+            <TextBlock
+                Text="Offset" 
+                VerticalAlignment="Center"
+                FontSize="20px"
+                Foreground="#AAA"
+                FontWeight="Bold" Grid.Column="2" Margin="10,4,0,4" />
+        </Border>
+
+        <Button Content="Save File" 
+                Click="FileSaveButton_Click" 
+                Grid.Column="2" 
+                Grid.Row="2" 
+                VerticalAlignment="Top"
+                Margin="44.5,91,44.5,0"
+                FontSize="10px"
+                Height="20" Grid.RowSpan="2" />
+
+        <TextBlock
+            x:Name="Pixel_Position"
+            Text="(x,y)=(0,0)" 
+            FontSize="15px"
+            Foreground="#AAA"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Right"
+            Margin="0,5,20,0"
+            FontWeight="Bold" Grid.Column="1" Grid.Row="3" />
+
+        <!--<Border Name="Title_Border" Background="#CC0A0A0A" Grid.ColumnSpan="3"  Grid.RowSpan="3">
+            <TextBlock  
+            x:Name="Dragdrop" 
+            Text="drag &amp; drop here!!!"
+            VerticalAlignment="Center"
+            Foreground="#FFF"
+            TextAlignment="Center"
+            Background="#000A0A0A" 
+            FontSize="100px" Margin="0,2,0.5,0"
+            FontWeight="Light" HorizontalAlignment="Center" Width="1078" />
+        </Border>-->
+
+        <!--<ProgressBar
+            x:Name="ProgressBar_wait"
+            Height="10"
+            Width="800"
+            Visibility="Hidden" 
+            Grid.RowSpan="3" 
+            Grid.ColumnSpan="3"
+            />-->
+
+        <ProgressBar
+            Style="{StaticResource MaterialDesignCircularProgressBar}"
+             x:Name="ProgressBar_wait"
+            Height="Auto"
+            Width="Auto"
+            Visibility="Hidden" Grid.Column="1" Margin="443,40,254.5,151" Grid.Row="1" />
+        <TextBlock
+            x:Name="Pixel_Position_Start"
+            Text="(x,y)=(0,0)" 
+            FontSize="15px"
+            Foreground="#AAA"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Right"
+            Margin="0,10,287.5,5"
+            FontWeight="Bold" Grid.Column="1" Grid.Row="3" />
+
+
+    </Grid>
+</Window>

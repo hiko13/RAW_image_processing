@@ -1,0 +1,171 @@
+﻿<Window x:Class="image_processing.SaveImageWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:image_processing"
+        
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal" 
+        TextOptions.TextRenderingMode="Auto"        
+        
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        Background="#1F1F1F"
+        mc:Ignorable="d"
+        Title="SaveImageWindow" Height="355.983" Width="377.249">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="39*"/>
+            <RowDefinition Height="136*"/>
+            <RowDefinition Height="66*"/>
+            <RowDefinition Height="35*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="41*"/>
+            <ColumnDefinition Width="83*"/>
+        </Grid.ColumnDefinitions>
+
+
+        <TextBlock
+            Text="保存画像選択"
+            FontSize="16px"
+            FontWeight="Bold"
+            Grid.Column="1"
+            Grid.Row="0"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Margin="9,10,144,0" Height="19" Width="96"/>
+
+        <TextBlock
+            Text="色ch分解画像"
+            FontSize="14px"
+            FontWeight="Bold"
+            Grid.Column="0"
+            Grid.Row="1"
+            VerticalAlignment="Top"
+            Margin="10,9.5,0,0" Height="18">
+        </TextBlock>
+
+        <CheckBox
+            Style="{StaticResource MaterialDesignCheckBox}" 
+            Margin="10,39.5,0,0" 
+            Grid.Column="0"
+            VerticalAlignment="Top" Grid.Row="1" Height="18" 
+            >
+            R画像
+        </CheckBox>
+        <CheckBox
+            Style="{StaticResource MaterialDesignCheckBox}" 
+            Margin="10,63.5,0,0" 
+            Grid.Column="0"
+            VerticalAlignment="Top" Grid.Row="1" Height="18">
+            Gr画像
+        </CheckBox>
+        <CheckBox
+            Style="{StaticResource MaterialDesignCheckBox}" 
+            Margin="10,85.5,0,0" 
+            Grid.Column="0"
+            VerticalAlignment="Top" Grid.Row="1" Height="18">
+            Gb画像
+        </CheckBox>
+        <CheckBox
+            Style="{StaticResource MaterialDesignCheckBox}" 
+            Margin="10,109.5,0,0" 
+            Grid.Column="0"
+            VerticalAlignment="Top" Grid.Row="1" Height="18">
+            B画像
+        </CheckBox>
+
+
+        <TextBlock
+            Text="カラー画像"
+            FontSize="14px"
+            FontWeight="Bold"
+            Grid.Column="1"
+            Grid.Row="1"
+            VerticalAlignment="Top"
+            Margin="10,9.5,0,0" Height="18">
+        </TextBlock>
+
+        <CheckBox
+            Style="{StaticResource MaterialDesignCheckBox}" 
+            Margin="10,39.5,0,0" 
+            Grid.Column="1"
+            VerticalAlignment="Top" Grid.Row="1" Height="18"
+            >
+            Original Image
+        </CheckBox>
+        <TextBlock
+            TextWrapping="Wrap"
+            Text="RAW画像にデモザイク処理のみを行いゲイン設定などは反映しないカラー画像"
+            FontSize="10px"
+            Foreground="#999"
+            FontWeight="UltraLight"
+            Grid.Column="1"
+            Grid.Row="1"
+            VerticalAlignment="Top"
+            Margin="20,63.5,5,0" >
+        </TextBlock>
+        <CheckBox
+            Style="{StaticResource MaterialDesignCheckBox}" 
+            Margin="10,93.5,0,0" 
+            Grid.Column="1"
+            VerticalAlignment="Top" Grid.Row="1" Height="18">
+            Processed Image
+        </CheckBox>
+        <TextBlock
+            TextWrapping="Wrap"
+            Text="RAW画像にデモザイク処理を行いゲイン設定などの処理をかけたカラー画像"
+            FontSize="10px"
+            Foreground="#999"
+            FontWeight="UltraLight"
+            Grid.Column="1"
+            Grid.Row="1"
+            VerticalAlignment="Top"
+            Margin="20,118.5,5,0" />
+        <TextBlock
+            Text="保存先指定"
+            FontSize="14px"
+            FontWeight="Bold"
+            Grid.Column="0"
+            Grid.Row="2"
+            VerticalAlignment="Top"
+            Margin="10,11.5,0,0" Height="16"/>
+        <Button 
+                Click="FileOpenButton_Click" 
+               BorderBrush="Transparent"
+               Background="#555"
+              Foreground="#AAA"
+                Grid.Column="1" 
+                Grid.Row="2" 
+                VerticalAlignment="Top"
+                HorizontalAlignment="Right"
+                Margin="0,33.5,55,0" 
+                Height="16" Width="40"   >
+            <materialDesign:PackIcon Kind="Folder" Height="8" Width="8"/>
+        </Button>
+
+        <TextBox 
+            x:Name="textBlockFileName"
+            Grid.Column="0"
+            Grid.ColumnSpan="2"
+            Grid.Row="2"
+            Margin="30,29.5,114,0"
+            VerticalAlignment="Top"
+            materialDesign:TransitionAssist.DisableTransitions="True" >
+
+        </TextBox>
+
+        <Button Content="Save File" 
+                Click="FileSaveButton_Click" 
+                Grid.Column="1" 
+                Grid.Row="3" 
+                VerticalAlignment="Top"
+                Margin="124,11,25,0"
+                FontSize="10px"
+                Height="20" />
+    </Grid>
+</Window>

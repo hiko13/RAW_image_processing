@@ -293,8 +293,6 @@ namespace image_processing
             });
         }
 
-        Mutex mut = new Mutex();
-
 
         private async void Total_Gain_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -309,7 +307,10 @@ namespace image_processing
         private void R_Gain_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             R_Gain = R_Gain_slider.Value;
-            Color_Small_Image_Update();
+            Task.Run(() =>
+            {
+                Color_Small_Image_Update();
+            });
         }
 
         private void G_Gain_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -510,34 +511,29 @@ namespace image_processing
         //    GC.Collect();
         //}
 
-        object lockObject = new object();
 
-        private void Color_Small_Image_Update()
+
+
+        private async void Color_Small_Image_Update()
             {
             //System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-            Task.Run(() =>
-            {
-
-                {
-
-                    
-
-                        lock (lockObject)
-                        {
                         if (color != null)
                         {
                             //sw.Start();
-                            color2_small = basic_process.GainOffset2(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
+                          // 　basic_process.GainOffset_RGB(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
+                await basic_process.GetColor_Process(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
+                Console.Write("タスク完了になってるよねええ?\n");
+                color2_small = basic_process.GetColor();
 
-                            //  Debug.WriteLine("ゲインオフセット計算は" + sw.Elapsed + "\n");
+                //  Debug.WriteLine("ゲインオフセット計算は" + sw.Elapsed + "\n");
 
 
-                            image_processed.Dispatcher.BeginInvoke(
+                await image_processed.Dispatcher.BeginInvoke(
                                                 new Action(() =>
                                                 {
                                                     var bitmap = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
                                                     bitmap.Lock();
-
+                                                    Console.Write("タスク完了になってるよねええaaaaa?\n");
                                                     unsafe
                                                     {
                                                         fixed (ushort* srcPtr = &color2_small[0])
@@ -548,22 +544,7 @@ namespace image_processing
                                                                 for (int x = 0; x < bitmap.PixelWidth; x++)
                                                                 {
                                                                     Ptr[0] = srcPtr[3 * x + width / dwnscale * 3 * y];
-                                                            //        Ptr += 3;
-                                                            //    }
-                                                            //}
-                                                            //for (int y = 0; y < bitmap.PixelHeight; y++)
-                                                            //{
-                                                            //    for (int x = 0; x < bitmap.PixelWidth; x++)
-                                                            //    {
                                                                     Ptr[1] = srcPtr[3 * x + 1 + width / dwnscale * 3 * y];
-                                                            //        Ptr += 3;
-                                                            //    }
-                                                            //}
-
-                                                            //for (int y = 0; y < bitmap.PixelHeight; y++)
-                                                            //{
-                                                            //    for (int x = 0; x < bitmap.PixelWidth; x++)
-                                                            //    {
                                                                     Ptr[2] = srcPtr[3 * x + 2 + width / dwnscale * 3 * y];
                                                                     Ptr += 3;
                                                                 }
@@ -615,16 +596,16 @@ namespace image_processing
                     int workerThreads;
                     int portThreads;
 
-                    ThreadPool.GetMaxThreads(out workerThreads, out portThreads);
-                    Console.WriteLine("\nMaximum worker threads: \t{0}" +
-                        "\nMaximum completion port threads: {1}",
-                        workerThreads, portThreads);
+                    //ThreadPool.GetMaxThreads(out workerThreads, out portThreads);
+                    //Console.WriteLine("\nMaximum worker threads: \t{0}" +
+                    //    "\nMaximum completion port threads: {1}",
+                    //    workerThreads, portThreads);
 
-                    ThreadPool.GetAvailableThreads(out workerThreads,
-                        out portThreads);
-                    Console.WriteLine("\nAvailable worker threads: \t{0}" +
-                        "\nAvailable completion port threads: {1}\n",
-                        workerThreads, portThreads);
+                    //ThreadPool.GetAvailableThreads(out workerThreads,
+                    //    out portThreads);
+                    //Console.WriteLine("\nAvailable worker threads: \t{0}" +
+                    //    "\nAvailable completion port threads: {1}\n",
+                    //    workerThreads, portThreads);
 
 
                     //mut.WaitOne();
@@ -705,11 +686,8 @@ namespace image_processing
                     //{
                     //    mut.ReleaseMutex();
                     //}
-                }
 
 
-            });
-        }
 
         }
     

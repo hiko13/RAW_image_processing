@@ -716,6 +716,71 @@ namespace image_processing
             return color2;
         }
 
+        public ushort[] GetColor()
+        {
+            return color2;
+        }
+
+        public async Task GetColor_Process(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
+                  , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
+        {
+            await GainOffset_RGB(color, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
+            Console.Write("タスク完了になってる?\n");
+        }
+
+        public async Task GainOffset_RGB(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
+                  , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
+        {
+            double C_Offset=0;
+            double C_Gain = 0;
+            int addr_offset = 0;
+
+            var tasks = new List<Task>();
+            for (int i = 0; i < 3; i++)
+            {
+                if (i == 0) {C_Offset = R_Offset; C_Gain = R_Gain; addr_offset = 0; }
+                else if (i == 1) { C_Offset = G_Offset; C_Gain = G_Gain; addr_offset = 1; }
+                else { C_Offset = B_Offset; C_Gain = B_Gain; addr_offset = 2; }
+
+                var prcTask = Task.Run(async() =>
+                     await GainOffset_loop(addr_offset, color, dwnscale, Offset, C_Offset, Gain, C_Gain, gamma));
+                tasks.Add(prcTask);                
+            }
+            await Task.WhenAll(tasks);
+            Console.Write("タスク完了\n");
+        }
+
+
+        private async Task GainOffset_loop(int addr_offset, ushort[] color, int dwnscale, double Offset, double C_Offset, double Gain, double C_Gain, double gamma)
+        {
+            
+            for (int y = 0; y <= image_height / dwnscale - 1; ++y)
+            {
+                for (int x = 0; x <= image_width / dwnscale - 1; ++x)
+                {
+                    color2[x * 3 + addr_offset + image_width / dwnscale * 3 * y]
+                        = GainOffset_U(color[x * 3 + addr_offset + image_width / dwnscale * 3 * y],dwnscale 
+                                           ,Offset, C_Offset, Gain, C_Gain, gamma);
+                }
+            }
+            Console.Write("ループ完\n");
+        }
+
+        private ushort GainOffset_U(ushort color_in, int dwnscale, double Offset, double C_Offset, double Gain, double C_Gain, double gamma)
+        {
+            double added;
+            ushort color_prc;
+            added = (double)color_in * Gain * C_Gain + Offset + C_Offset;
+            added = Clip_16bit(added);
+            added = GammaCorrection(added, gamma);
+            added = Clip_16bit(added);
+
+            color_prc= (ushort)(added);
+
+            return color_prc;
+        }
+
+
         public ushort[] Pixel2ColorArray(double R, double G, double B)
         {
             ushort[] color_image = new ushort[image_width / dwnscale * 3 * image_height / dwnscale];
@@ -732,14 +797,14 @@ namespace image_processing
             return color_image;
         }
 
-        public double GammaCorrection(double val, double gamma)
+        private double GammaCorrection(double val, double gamma)
         {
             double gamma_val = Math.Pow(val, gamma) / (Math.Pow(65535, gamma)) * 65535;
             double gamma_val_clip = Clip_16bit(gamma_val);
             return gamma_val;
         }
 
-        public double Clip_16bit(double val)
+        private double Clip_16bit(double val)
         {
 
             if (val > 65535) val = 65535;

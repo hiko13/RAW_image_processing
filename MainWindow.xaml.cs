@@ -43,7 +43,6 @@ namespace image_processing
         public Array original_data;
 
         public basic_process basic_process;
-        public basic_process_unsafe basic_process_unsafe;
 
         public static int width, height;
         public static int dwnscale = 1;
@@ -147,9 +146,6 @@ namespace image_processing
                     {
                         //Show Color Image
                         var colorBitmap = BitmapSource.Create(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null, color_small, 16 * 3 * width / dwnscale / 8);
-                        //var colorBitmap = BitmapSource.Create(width/8, height/8, 96, 96, PixelFormats.Rgb48, null, color_small, 16 * 3 * width / 8 / 8);
-
-                        //var resized_colorBitmap = new TransformedBitmap(colorBitmap, new ScaleTransform(1d / 16d, 1d / 16d));
 
                         //image_processed.Source = resized_colorBitmap;
                         image_processed.Source = colorBitmap;
@@ -157,7 +153,6 @@ namespace image_processing
                     }));
 
                     basic_process = new basic_process(width, height, dwnscale);
-                    basic_process_unsafe = new basic_process_unsafe(width, height, dwnscale);
 
                     algorithmes2 = null;
 
@@ -294,10 +289,10 @@ namespace image_processing
         }
 
 
-        private async void Total_Gain_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void Total_Gain_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             Gain = Total_Gain_slider.Value;
-            await Task.Run(() =>
+            Task.Run(() =>
             {
                 Color_Small_Image_Update();
             });
@@ -357,6 +352,74 @@ namespace image_processing
         //    TextBlock1.Text = ProgressBar1.Value.ToString() + "%";
         //}
 
+        static object lockObject = new object();
+
+        private void Color_Small_Image_Update()
+        {
+            //System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            int task_count = basic_process.tasks.Count;
+
+
+            if (color != null)
+            {
+
+                basic_process.GetColor_Process(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
+                Console.Write("タスク完了になってるよねええ?\n");
+
+                lock (lockObject)
+                {
+                    color2_small = basic_process.GetColor();
+
+                }
+
+                image_processed.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    var bitmap = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
+                    bitmap.Lock();
+                    Console.Write("タスク完了になってるよねええaaaaa?\n");
+                    unsafe
+                    {
+                        //fixed (ushort* srcPtr = &color2_small[0])
+                        //{
+                        //    ushort* Ptr = (ushort*)bitmap.BackBuffer;
+                        //    for (int y = 0; y < bitmap.PixelHeight; y++)
+                        //    {
+                        //        for (int x = 0; x < bitmap.PixelWidth; x++)
+                        //        {
+                        //            Ptr[0] = srcPtr[3 * x + width / dwnscale * 3 * y];
+                        //            Ptr[1] = srcPtr[3 * x + 1 + width / dwnscale * 3 * y];
+                        //            Ptr[2] = srcPtr[3 * x + 2 + width / dwnscale * 3 * y];
+                        //            Ptr += 3;
+                        //        }
+                        //    }
+                        //    bitmap.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap.Width, (int)bitmap.Height));
+                        //    bitmap.Unlock();
+
+                        //    image_processed.Source = bitmap;
+                        //}
+
+                        ushort* Ptr = (ushort*)bitmap.BackBuffer;
+                        for (int y = 0; y < bitmap.PixelHeight; y++)
+                        {
+                            for (int x = 0; x < bitmap.PixelWidth; x++)
+                            {
+                                Ptr[0] = color2_small[3 * x + width / dwnscale * 3 * y];
+                                Ptr[1] = color2_small[3 * x + 1 + width / dwnscale * 3 * y];
+                                Ptr[2] = color2_small[3 * x + 2 + width / dwnscale * 3 * y];
+                                Ptr += 3;
+                            }
+                        }
+                        bitmap.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap.Width, (int)bitmap.Height));
+                        bitmap.Unlock();
+
+                        image_processed.Source = bitmap;
+                    }
+                }));
+            }
+            GC.Collect();
+            Console.Write("カラー配列格納完\n");
+
+        }
 
 
 
@@ -365,11 +428,9 @@ namespace image_processing
 
 
 
+        /// ////////////ZOOM and MOVE///////////
 
-
-            /// ////////////ZOOM and MOVE///////////
-
-            private System.Windows.Point _start;
+        private System.Windows.Point _start;
             private double size_ratio = 1;
 
             private void Image_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -514,182 +575,8 @@ namespace image_processing
 
 
 
-        private async void Color_Small_Image_Update()
-            {
-            //System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-                        if (color != null)
-                        {
-                            //sw.Start();
-                          // 　basic_process.GainOffset_RGB(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
-                await basic_process.GetColor_Process(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
-                Console.Write("タスク完了になってるよねええ?\n");
-                color2_small = basic_process.GetColor();
 
-                //  Debug.WriteLine("ゲインオフセット計算は" + sw.Elapsed + "\n");
-
-
-                await image_processed.Dispatcher.BeginInvoke(
-                                                new Action(() =>
-                                                {
-                                                    var bitmap = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
-                                                    bitmap.Lock();
-                                                    Console.Write("タスク完了になってるよねええaaaaa?\n");
-                                                    unsafe
-                                                    {
-                                                        fixed (ushort* srcPtr = &color2_small[0])
-                                                        {
-                                                            ushort* Ptr = (ushort*)bitmap.BackBuffer;
-                                                            for (int y = 0; y < bitmap.PixelHeight; y++)
-                                                            {
-                                                                for (int x = 0; x < bitmap.PixelWidth; x++)
-                                                                {
-                                                                    Ptr[0] = srcPtr[3 * x + width / dwnscale * 3 * y];
-                                                                    Ptr[1] = srcPtr[3 * x + 1 + width / dwnscale * 3 * y];
-                                                                    Ptr[2] = srcPtr[3 * x + 2 + width / dwnscale * 3 * y];
-                                                                    Ptr += 3;
-                                                                }
-                                                            }
-                                                            bitmap.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap.Width, (int)bitmap.Height));
-                                                            bitmap.Unlock();
-
-                                                            image_processed.Source = bitmap;
-
-                                                        }
-                                                    }
-                                                }));
-
-                            //sw.Stop();
-                            // Debug.WriteLine("unsafe画像表示は" + sw.Elapsed + "\n");
-
-
-                            //ThreadPool.GetAvailableThreads(out worker, out io);
-                            //    ThreadPool.GetMaxThreads(out workerThreads, out portThreads);
-
-                            //    processing_Threads = workerThreads - worker;
-
-                            //    if (processing_Threads == 1)//now processing
-                            //    {
-                            //        color2 = basic_process.GainOffset2(color, 1, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
-                            //        image_processed.Dispatcher.BeginInvoke(
-                            //        new Action(() =>
-                            //        {
-                            //            Console.WriteLine("Thread pool threads available at startup: ");
-                            //            Console.WriteLine("   Worker threads: {0:N0}", worker);
-                            //            Console.WriteLine("   Asynchronous I/O threads: {0:N0}", io);
-                            //            var colorBitmap_full = BitmapImage.Create(width, height, 96, 96, PixelFormats.Rgb48, null, color2, 16 * 3 * width / 8);
-                            //        //var resized_colorBitmap = new TransformedBitmap(colorBitmap, new ScaleTransform(1d / 8d, 1d / 8d));
-                            //        //System.Threading.Thread.Sleep(300);//heavy process test for multi thread
-                            //        image_processed.Source = colorBitmap_full;
-                            //        })
-                            //        );
-
-                            //    }
-
-
-                        }
-                        GC.Collect();
-                        Console.Write("カラー配列格納完\n");
-
-                    }
-
-
-                    int workerThreads;
-                    int portThreads;
-
-                    //ThreadPool.GetMaxThreads(out workerThreads, out portThreads);
-                    //Console.WriteLine("\nMaximum worker threads: \t{0}" +
-                    //    "\nMaximum completion port threads: {1}",
-                    //    workerThreads, portThreads);
-
-                    //ThreadPool.GetAvailableThreads(out workerThreads,
-                    //    out portThreads);
-                    //Console.WriteLine("\nAvailable worker threads: \t{0}" +
-                    //    "\nAvailable completion port threads: {1}\n",
-                    //    workerThreads, portThreads);
-
-
-                    //mut.WaitOne();
-                    //try
-                    //{
-                    //    if (color != null)
-                    //    {
-                    //        //sw.Start();
-                    //        color2_small = basic_process.GainOffset2(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
-
-                    //      //  Debug.WriteLine("ゲインオフセット計算は" + sw.Elapsed + "\n");
-
-
-                    //        image_processed.Dispatcher.BeginInvoke(
-                    //                            new Action(() =>
-                    //                            {
-                    //                                var bitmap = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
-                    //                                bitmap.Lock();
-
-                    //                                unsafe
-                    //                                {
-                    //                                    fixed (ushort* srcPtr = &color2_small[0])
-                    //                                    {
-                    //                                        ushort* Ptr = (ushort*)bitmap.BackBuffer;
-                    //                                        for (int y = 0; y < bitmap.PixelHeight; y++)
-                    //                                        {
-                    //                                            for (int x = 0; x < bitmap.PixelWidth; x++)
-                    //                                            {
-                    //                                                Ptr[0] = srcPtr[3 * x + width / dwnscale * 3 * y];
-                    //                                                Ptr[1] = srcPtr[3 * x + 1 + width / dwnscale * 3 * y];
-                    //                                                Ptr[2] = srcPtr[3 * x + 2 + width / dwnscale * 3 * y];
-                    //                                                Ptr += 3;
-                    //                                            }
-                    //                                        }
-                    //                                        bitmap.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap.Width, (int)bitmap.Height));
-                    //                                        bitmap.Unlock();
-
-                    //                                        image_processed.Source = bitmap;
-
-                    //                                    }
-                    //                                }
-                    //                            }));
-
-                    //        //sw.Stop();
-                    //       // Debug.WriteLine("unsafe画像表示は" + sw.Elapsed + "\n");
-
-
-                    //        //ThreadPool.GetAvailableThreads(out worker, out io);
-                    //        //    ThreadPool.GetMaxThreads(out workerThreads, out portThreads);
-
-                    //        //    processing_Threads = workerThreads - worker;
-
-                    //        //    if (processing_Threads == 1)//now processing
-                    //        //    {
-                    //        //        color2 = basic_process.GainOffset2(color, 1, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
-                    //        //        image_processed.Dispatcher.BeginInvoke(
-                    //        //        new Action(() =>
-                    //        //        {
-                    //        //            Console.WriteLine("Thread pool threads available at startup: ");
-                    //        //            Console.WriteLine("   Worker threads: {0:N0}", worker);
-                    //        //            Console.WriteLine("   Asynchronous I/O threads: {0:N0}", io);
-                    //        //            var colorBitmap_full = BitmapImage.Create(width, height, 96, 96, PixelFormats.Rgb48, null, color2, 16 * 3 * width / 8);
-                    //        //        //var resized_colorBitmap = new TransformedBitmap(colorBitmap, new ScaleTransform(1d / 8d, 1d / 8d));
-                    //        //        //System.Threading.Thread.Sleep(300);//heavy process test for multi thread
-                    //        //        image_processed.Source = colorBitmap_full;
-                    //        //        })
-                    //        //        );
-
-                    //        //    }
-
-
-                    //    }
-                    //    GC.Collect();
-                    //Console.Write("カラー配列格納完\n");
-
-                    //}
-                    //finally
-                    //{
-                    //    mut.ReleaseMutex();
-                    //}
-
-
-
-        }
+     }
     
 
 }

@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.IO;
 using System.ComponentModel;
+using System.Threading;
 
 namespace image_processing
 {
@@ -648,121 +649,140 @@ namespace image_processing
             color2_small = new ushort[image_width/dwnscale * 3 * image_height/ dwnscale];
         }
 
-        public ushort[] GainOffset(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
-                  , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
-        {
-            double added_R, added_G, added_B;
+        //public ushort[] GainOffset(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
+        //          , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
+        //{
+        //    double added_R, added_G, added_B;
 
-            for (int y = 0; y <= image_height/ dwnscale - 1; ++y)
-            {
-                for (int x = 0; x <= image_width / dwnscale - 1; ++x)
-                {
-                    checked
-                    {
-                        added_R = (double)color[x * 3 + image_width / dwnscale * 3 * y] * Gain * R_Gain + Offset + R_Offset;//R
-                        added_G = (double)color[x * 3 + 1 + image_width / dwnscale * 3 * y] * Gain * G_Gain + Offset + G_Offset;//G
-                        added_B = (double)color[x * 3 + 2 + image_width / dwnscale * 3 * y] * Gain * B_Gain + Offset + B_Offset;//B
+        //    for (int y = 0; y <= image_height/ dwnscale - 1; ++y)
+        //    {
+        //        for (int x = 0; x <= image_width / dwnscale - 1; ++x)
+        //        {
+        //            checked
+        //            {
+        //                added_R = (double)color[x * 3 + image_width / dwnscale * 3 * y] * Gain * R_Gain + Offset + R_Offset;//R
+        //                added_G = (double)color[x * 3 + 1 + image_width / dwnscale * 3 * y] * Gain * G_Gain + Offset + G_Offset;//G
+        //                added_B = (double)color[x * 3 + 2 + image_width / dwnscale * 3 * y] * Gain * B_Gain + Offset + B_Offset;//B
 
-                        added_R = Clip_16bit(added_R);
-                        added_G = Clip_16bit(added_G);
-                        added_B = Clip_16bit(added_B);
+        //                added_R = Clip_16bit(added_R);
+        //                added_G = Clip_16bit(added_G);
+        //                added_B = Clip_16bit(added_B);
 
-                        added_R = GammaCorrection(added_R, gamma);
-                        added_G = GammaCorrection(added_G, gamma);
-                        added_B = GammaCorrection(added_B, gamma);
+        //                added_R = GammaCorrection(added_R, gamma);
+        //                added_G = GammaCorrection(added_G, gamma);
+        //                added_B = GammaCorrection(added_B, gamma);
 
-                        color2_small[x * 3 + image_width / dwnscale * 3 * y] = (ushort)(added_R);
-                        color2_small[x * 3 + 1 + image_width / dwnscale * 3 * y] = (ushort)(added_G);
-                        color2_small[x * 3 + 2 + image_width / dwnscale * 3 * y] = (ushort)(added_B);
+        //                color2_small[x * 3 + image_width / dwnscale * 3 * y] = (ushort)(added_R);
+        //                color2_small[x * 3 + 1 + image_width / dwnscale * 3 * y] = (ushort)(added_G);
+        //                color2_small[x * 3 + 2 + image_width / dwnscale * 3 * y] = (ushort)(added_B);
 
-                    }
-                }
+        //            }
+        //        }
 
-            }
-            return color2_small;
-        }
+        //    }
+        //    return color2_small;
+        //}
 
-        public ushort[] GainOffset2(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
-                  , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
-        {
-            double added_R, added_G, added_B;
+        //public ushort[] GainOffset2(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
+        //          , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
+        //{
+        //    double added_R, added_G, added_B;
 
-            for (int y = 0; y <= image_height / dwnscale - 1; ++y)
-            {
-                for (int x = 0; x <= image_width / dwnscale - 1; ++x)
-                {
-                    checked
-                    {
-                        added_R = (double)color[x * 3 + image_width / dwnscale * 3 * y] * Gain * R_Gain + Offset + R_Offset;//R
-                        added_G = (double)color[x * 3 + 1 + image_width / dwnscale * 3 * y] * Gain * G_Gain + Offset + G_Offset;//G
-                        added_B = (double)color[x * 3 + 2 + image_width / dwnscale * 3 * y] * Gain * B_Gain + Offset + B_Offset;//B
+        //    for (int y = 0; y <= image_height / dwnscale - 1; ++y)
+        //    {
+        //        for (int x = 0; x <= image_width / dwnscale - 1; ++x)
+        //        {
+        //            checked
+        //            {
+        //                added_R = (double)color[x * 3 + image_width / dwnscale * 3 * y] * Gain * R_Gain + Offset + R_Offset;//R
+        //                added_G = (double)color[x * 3 + 1 + image_width / dwnscale * 3 * y] * Gain * G_Gain + Offset + G_Offset;//G
+        //                added_B = (double)color[x * 3 + 2 + image_width / dwnscale * 3 * y] * Gain * B_Gain + Offset + B_Offset;//B
 
-                        added_R = Clip_16bit(added_R);
-                        added_G = Clip_16bit(added_G);
-                        added_B = Clip_16bit(added_B);
+        //                added_R = Clip_16bit(added_R);
+        //                added_G = Clip_16bit(added_G);
+        //                added_B = Clip_16bit(added_B);
 
-                        added_R = GammaCorrection(added_R, gamma);
-                        added_G = GammaCorrection(added_G, gamma);
-                        added_B = GammaCorrection(added_B, gamma);
+        //                added_R = GammaCorrection(added_R, gamma);
+        //                added_G = GammaCorrection(added_G, gamma);
+        //                added_B = GammaCorrection(added_B, gamma);
 
-                        color2[x * 3 + image_width / dwnscale * 3 * y] = (ushort)(added_R);
-                        color2[x * 3 + 1 + image_width / dwnscale * 3 * y] = (ushort)(added_G);
-                        color2[x * 3 + 2 + image_width / dwnscale * 3 * y] = (ushort)(added_B);
+        //                color2[x * 3 + image_width / dwnscale * 3 * y] = (ushort)(added_R);
+        //                color2[x * 3 + 1 + image_width / dwnscale * 3 * y] = (ushort)(added_G);
+        //                color2[x * 3 + 2 + image_width / dwnscale * 3 * y] = (ushort)(added_B);
 
-                    }
-                }
+        //            }
+        //        }
 
-            }
-            return color2;
-        }
+        //    }
+        //    return color2;
+        //}
+
+        //object lockObject = new object();
 
         public ushort[] GetColor()
         {
             return color2;
         }
 
-        public async Task GetColor_Process(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
+        static object lockObject = new object();
+
+        public async void GetColor_Process(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
                   , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
         {
-            await GainOffset_RGB(color, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
+
+            await Task.Run(() =>
+            {
+                GainOffset_RGB(color, dwnscale, Offset, R_Offset, G_Offset, B_Offset,
+                Gain, R_Gain, G_Gain, B_Gain, gamma);
+            });
+
             Console.Write("タスク完了になってる?\n");
         }
 
-        public async Task GainOffset_RGB(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
+        static public List<Task> tasks = new List<Task>();
+
+        public Task GainOffset_RGB(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
                   , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
         {
-            double C_Offset=0;
-            double C_Gain = 0;
-            int addr_offset = 0;
+            
 
-            var tasks = new List<Task>();
-            for (int i = 0; i < 3; i++)
-            {
-                if (i == 0) {C_Offset = R_Offset; C_Gain = R_Gain; addr_offset = 0; }
-                else if (i == 1) { C_Offset = G_Offset; C_Gain = G_Gain; addr_offset = 1; }
-                else { C_Offset = B_Offset; C_Gain = B_Gain; addr_offset = 2; }
+            var prcTask = Task.Run(() =>
+                     {
+                         GainOffset_loop(0, color, dwnscale, Offset, R_Offset, Gain, R_Gain, gamma);
+                     });
+            tasks.Add(prcTask);
 
-                var prcTask = Task.Run(async() =>
-                     await GainOffset_loop(addr_offset, color, dwnscale, Offset, C_Offset, Gain, C_Gain, gamma));
-                tasks.Add(prcTask);                
-            }
-            await Task.WhenAll(tasks);
+            prcTask = Task.Run(() =>
+                    {
+                        GainOffset_loop(1, color, dwnscale, Offset, G_Offset, Gain, G_Gain, gamma);
+                    });
+            tasks.Add(prcTask);
+
+            prcTask = Task.Run(() =>
+                    {
+                        GainOffset_loop(2, color, dwnscale, Offset, B_Offset, Gain, B_Gain, gamma);
+                    });
+            tasks.Add(prcTask);
+
             Console.Write("タスク完了\n");
+            return Task.WhenAll(tasks);
         }
 
 
-        private async Task GainOffset_loop(int addr_offset, ushort[] color, int dwnscale, double Offset, double C_Offset, double Gain, double C_Gain, double gamma)
+        private void GainOffset_loop(int addr_offset, ushort[] color, int dwnscale, double Offset, double C_Offset, double Gain, double C_Gain, double gamma)
         {
-            
-            for (int y = 0; y <= image_height / dwnscale - 1; ++y)
+            var tasks=Task.Run(() =>
             {
-                for (int x = 0; x <= image_width / dwnscale - 1; ++x)
+                for (int y = 0; y <= image_height / dwnscale - 1; ++y)
                 {
-                    color2[x * 3 + addr_offset + image_width / dwnscale * 3 * y]
-                        = GainOffset_U(color[x * 3 + addr_offset + image_width / dwnscale * 3 * y],dwnscale 
-                                           ,Offset, C_Offset, Gain, C_Gain, gamma);
+                    for (int x = 0; x <= image_width / dwnscale - 1; ++x)
+                    {
+                        color2[x * 3 + addr_offset + image_width / dwnscale * 3 * y]
+                            = GainOffset_U(color[x * 3 + addr_offset + image_width / dwnscale * 3 * y], dwnscale
+                                               , Offset, C_Offset, Gain, C_Gain, gamma);
+                    }
                 }
-            }
+            });
             Console.Write("ループ完\n");
         }
 
@@ -781,21 +801,21 @@ namespace image_processing
         }
 
 
-        public ushort[] Pixel2ColorArray(double R, double G, double B)
-        {
-            ushort[] color_image = new ushort[image_width / dwnscale * 3 * image_height / dwnscale];
-            for (int y = 0; y <= image_height / dwnscale - 1; ++y)
-            {
-                for (int x = 0; x <= image_width / dwnscale - 1; ++x)
-                {
-                    color_image[x * 3 + image_width / dwnscale * 3 * y] = (ushort)(R);
-                    color_image[x * 3 + 1 + image_width / dwnscale * 3 * y] = (ushort)(G);
-                    color_image[x * 3 + 2 + image_width / dwnscale * 3 * y] = (ushort)(B);
-                }
-            }
+        //public ushort[] Pixel2ColorArray(double R, double G, double B)
+        //{
+        //    ushort[] color_image = new ushort[image_width / dwnscale * 3 * image_height / dwnscale];
+        //    for (int y = 0; y <= image_height / dwnscale - 1; ++y)
+        //    {
+        //        for (int x = 0; x <= image_width / dwnscale - 1; ++x)
+        //        {
+        //            color_image[x * 3 + image_width / dwnscale * 3 * y] = (ushort)(R);
+        //            color_image[x * 3 + 1 + image_width / dwnscale * 3 * y] = (ushort)(G);
+        //            color_image[x * 3 + 2 + image_width / dwnscale * 3 * y] = (ushort)(B);
+        //        }
+        //    }
 
-            return color_image;
-        }
+        //    return color_image;
+        //}
 
         private double GammaCorrection(double val, double gamma)
         {
@@ -816,106 +836,4 @@ namespace image_processing
 
     }
 
-
-
-    public class basic_process_unsafe
-    {
-
-        static private int image_width;
-        static private int image_height;
-        static private int dwnscale;
-        private ushort[] color2;
-        private ushort[] color2_small;
-
-
-        public basic_process_unsafe(int image_width_o, int image_height_o, int dwnscale_o)
-        {
-            image_width = image_width_o;
-            image_height = image_height_o;
-            dwnscale = dwnscale_o;
-            color2 = new ushort[image_width * 3 * image_height];
-            color2_small = new ushort[image_width / dwnscale * 3 * image_height / dwnscale];
-        }
-       
-        public unsafe ushort GainOffset(ushort* color, int dwnscale, double Offset, double C_Offset
-                  , double Gain, double C_Gain, double gamma)
-
-        {
-            double added;
-            ushort added_16bit;
-            checked
-            {
-                added = color[0] * Gain * C_Gain + Offset + C_Offset;
-                added = Clip_16bit(added);
-                added = GammaCorrection(added, gamma);
-                added = Clip_16bit(added);
-                added_16bit = (ushort)added;
-            }
-            return added_16bit;
-        }
-
-        public ushort[] GainOffset2(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
-                  , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
-        {
-            double added_R, added_G, added_B;
-
-            for (int y = 0; y <= image_height / dwnscale - 1; ++y)
-            {
-                for (int x = 0; x <= image_width / dwnscale - 1; ++x)
-                {
-                        added_R = (double)color[x * 3 + image_width / dwnscale * 3 * y] * Gain * R_Gain + Offset + R_Offset;//R
-                        added_G = (double)color[x * 3 + 1 + image_width / dwnscale * 3 * y] * Gain * G_Gain + Offset + G_Offset;//G
-                        added_B = (double)color[x * 3 + 2 + image_width / dwnscale * 3 * y] * Gain * B_Gain + Offset + B_Offset;//B
-
-                        added_R = Clip_16bit(added_R);
-                        added_G = Clip_16bit(added_G);
-                        added_B = Clip_16bit(added_B);
-
-                        added_R = GammaCorrection(added_R, gamma);
-                        added_G = GammaCorrection(added_G, gamma);
-                        added_B = GammaCorrection(added_B, gamma);
-
-                        color2[x * 3 + image_width / dwnscale * 3 * y] = (ushort)(added_R);
-                        color2[x * 3 + 1 + image_width / dwnscale * 3 * y] = (ushort)(added_G);
-                        color2[x * 3 + 2 + image_width / dwnscale * 3 * y] = (ushort)(added_B);
-                }
-
-            }
-            return color2;
-        }
-
-        public ushort[] Pixel2ColorArray(double R, double G, double B)
-        {
-            ushort[] color_image = new ushort[image_width / dwnscale * 3 * image_height / dwnscale];
-            for (int y = 0; y <= image_height / dwnscale - 1; ++y)
-            {
-                for (int x = 0; x <= image_width / dwnscale - 1; ++x)
-                {
-                    color_image[x * 3 + image_width / dwnscale * 3 * y] = (ushort)(R);
-                    color_image[x * 3 + 1 + image_width / dwnscale * 3 * y] = (ushort)(G);
-                    color_image[x * 3 + 2 + image_width / dwnscale * 3 * y] = (ushort)(B);
-                }
-            }
-
-            return color_image;
-        }
-
-        public double GammaCorrection(double val, double gamma)
-        {
-            double gamma_val = Math.Pow(val, gamma) / (Math.Pow(65535, gamma)) * 65535;
-            double gamma_val_clip = Clip_16bit(gamma_val);
-            return gamma_val;
-        }
-
-        public double Clip_16bit(double val)
-        {
-
-            if (val > 65535) val = 65535;
-            else if (val < 0) val = 0;
-
-            return val;
-        }
-
-
-    }
 }

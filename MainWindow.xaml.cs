@@ -129,10 +129,11 @@ namespace image_processing
                     algorithmes2.Ch_split(original_data);
 
                     //Demosaic
-                    color = algorithmes2.Demosaic();
+                    algorithmes2.Demosaic();
 
                     //Small Color Image
-                    color_small = algorithmes2.ComplessColorImage();
+                    algorithmes2.ComplessColorImage();
+                    color_small = algorithmes2.color_small;
 
                     //Save Images
                     algorithmes2.Save_Demosaiced_Imege();
@@ -365,13 +366,10 @@ namespace image_processing
 
                 basic_process.GetColor_Process(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
                 Console.Write("タスク完了になってるよねええ?\n");
+                
+                color2_small = basic_process.GetColor();
 
-                lock (lockObject)
-                {
-                    color2_small = basic_process.GetColor();
-
-                }
-
+                Task.WaitAll(basic_process.tasks.ToArray());
                 image_processed.Dispatcher.BeginInvoke(new Action(() =>
                 {
                     var bitmap = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
@@ -379,25 +377,6 @@ namespace image_processing
                     Console.Write("タスク完了になってるよねええaaaaa?\n");
                     unsafe
                     {
-                        //fixed (ushort* srcPtr = &color2_small[0])
-                        //{
-                        //    ushort* Ptr = (ushort*)bitmap.BackBuffer;
-                        //    for (int y = 0; y < bitmap.PixelHeight; y++)
-                        //    {
-                        //        for (int x = 0; x < bitmap.PixelWidth; x++)
-                        //        {
-                        //            Ptr[0] = srcPtr[3 * x + width / dwnscale * 3 * y];
-                        //            Ptr[1] = srcPtr[3 * x + 1 + width / dwnscale * 3 * y];
-                        //            Ptr[2] = srcPtr[3 * x + 2 + width / dwnscale * 3 * y];
-                        //            Ptr += 3;
-                        //        }
-                        //    }
-                        //    bitmap.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap.Width, (int)bitmap.Height));
-                        //    bitmap.Unlock();
-
-                        //    image_processed.Source = bitmap;
-                        //}
-
                         ushort* Ptr = (ushort*)bitmap.BackBuffer;
                         for (int y = 0; y < bitmap.PixelHeight; y++)
                         {

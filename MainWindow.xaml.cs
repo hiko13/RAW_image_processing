@@ -129,11 +129,10 @@ namespace image_processing
                     algorithmes2.Ch_split(original_data);
 
                     //Demosaic
-                    algorithmes2.Demosaic();
+                    color = algorithmes2.Demosaic();
 
                     //Small Color Image
-                    algorithmes2.ComplessColorImage();
-                    color_small = algorithmes2.color_small;
+                    color_small = algorithmes2.ComplessColorImage();
 
                     //Save Images
                     algorithmes2.Save_Demosaiced_Imege();
@@ -169,36 +168,6 @@ namespace image_processing
 
         }
 
-
-
-        //private void Processing()
-        //{
-        //    processed = original;
-        //    using (processed.GetBitmapContext())
-        //    {
-        //        int[,] kernel = {
-        //                           {1, 1, 1},
-        //                           {1, 0, 1},
-        //                           {1, 1, 1},
-        //                       };
-        //        processed = original.Convolute(kernel);
-
-        //        byte R = 200;
-        //        byte G = 0;
-        //        byte B = 0;
-        //        //int x = 100;
-        //        //int y = 100;
-        //        for (int x = 1; x <= 200; ++x)
-        //        {
-        //            for (int y = 1; y <= 200; ++y)
-        //            {
-
-        //               // processed.SetPixel(x, y, R, G, B);
-        //                Byte pixelColor1 =  processed.GetPixel(x,y).R;
-        //            }
-        //        }
-        //    }
-        //}
 
 
         private Array FileConvertArray(string filename, out PixelFormat format)
@@ -357,8 +326,7 @@ namespace image_processing
 
         private void Color_Small_Image_Update()
         {
-            //System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-            int task_count = basic_process.tasks.Count;
+
 
 
             if (color != null)
@@ -366,10 +334,13 @@ namespace image_processing
 
                 basic_process.GetColor_Process(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
                 Console.Write("タスク完了になってるよねええ?\n");
-                
-                color2_small = basic_process.GetColor();
 
-                Task.WaitAll(basic_process.tasks.ToArray());
+                lock (lockObject)
+                {
+                    color2_small = basic_process.GetColor();
+
+                }
+
                 image_processed.Dispatcher.BeginInvoke(new Action(() =>
                 {
                     var bitmap = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
@@ -527,33 +498,6 @@ namespace image_processing
             var win = new SaveImageWindow();
             win.Show();
         }
-
-
-        //private void Color_Image_Update()
-        //{
-
-        //   //System.Threading.Thread.Sleep(300);//heavy process test for multi thread
-
-        //        if (color != null)
-        //        {
-        //            color2 = basic_process.GainOffset(color,dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
-
-        //        image_processed.Dispatcher.BeginInvoke(
-        //        new Action(() =>
-        //        {
-        //            var colorBitmap = BitmapImage.Create(width, height, 96, 96, PixelFormats.Rgb48, null, color2, 16 * 3 * width / 8);
-        //            //var resized_colorBitmap = new TransformedBitmap(colorBitmap, new ScaleTransform(1d / 8d, 1d / 8d));
-        //            //System.Threading.Thread.Sleep(300);//heavy process test for multi thread
-        //            image_processed.Source = colorBitmap;
-        //            })
-        //        );
-        //        }
-        //    GC.Collect();
-        //}
-
-
-
-
 
      }
     

@@ -26,14 +26,16 @@ namespace image_processing
         static private int image_height;
         static private int dwnscale;
         private ushort[] Rdata, Grdata, Gbdata, Bdata;
-        public ushort[] color { get; set; }
-        public ushort[] color_small { get; set; }
+        private ushort[] color, color_small;
 
         private ushort[] Rdemos;
         private ushort[] Grdemos;
         private ushort[] Gbdemos;
         private ushort[] Bdemos;
         private ushort[] Gdemos;
+
+        public int progress { get; set; }
+
 
         public algorithms(int image_width_o, int image_height_o, int dwnscale_o) {
             Console.Write("algorithms クラスのコンストラクターが呼ばれました\n");
@@ -228,14 +230,17 @@ namespace image_processing
             return color;
         }
 
-        public void Demosaic()
+        public ushort[] Demosaic()
             {
             //Interpolation
 
-            Rdemos = Interpolation_R(Rdata);
-            Grdemos = Interpolation_Gr(Grdata);
-            Gbdemos = Interpolation_Gb(Gbdata);
-            Bdemos = Interpolation_B(Bdata);
+            var options = new ParallelOptions();
+            Parallel.Invoke(options,
+                () => Rdemos = Interpolation_R(Rdata),
+                () => Grdemos = Interpolation_Gr(Grdata),
+                () => Gbdemos = Interpolation_Gb(Gbdata),
+                () => Bdemos = Interpolation_B(Bdata)
+                );
             
             Console.Write("補間完了\n");
 
@@ -245,9 +250,11 @@ namespace image_processing
             //Set to Color Image Array
             color = Create_Color_Array(Rdemos,Gdemos,Bdemos);
             Console.Write("カラー配列格納完\n");
+
+            return color;
             }
 
-        public void ComplessColorImage()
+        public ushort[] ComplessColorImage()
         {
             color_small = new ushort[image_width / dwnscale * 3 * image_height / dwnscale];
 
@@ -260,6 +267,8 @@ namespace image_processing
                     color_small[i * 3 + 2 + j * image_width / dwnscale * 3] = color[i * 3 * dwnscale + 2 + image_width * j * 3 * dwnscale];
                 }
             }
+
+            return color_small;
         }
 
             public void Save_Demosaiced_Imege()
@@ -267,8 +276,8 @@ namespace image_processing
                 SaveImage("Rdemos.tif", Rdemos, image_width, image_height, PixelFormats.Gray16);
                 SaveImage("Gdemos.tif", Gdemos, image_width, image_height, PixelFormats.Gray16);
                 SaveImage("Bdemos.tif", Bdemos, image_width, image_height, PixelFormats.Gray16);
-                SaveImage("color.tif", color, image_width, image_height, PixelFormats.Rgb48);
-            }
+                SaveImage("color.tif", color, image_width, image_height, PixelFormats.Gray16);
+        }
 
             public void SaveImage(string filename, Array bmpData, int width, int height, System.Windows.Media.PixelFormat format, double dpi = 96)
             {
@@ -318,7 +327,8 @@ namespace image_processing
             }
 
     }
-    
+
+
 
 
     public class basic_process
@@ -329,11 +339,6 @@ namespace image_processing
         static private int dwnscale;
         private ushort[] color2;
         private ushort[] color2_small;
-        private ushort[] color2_small_buf;
-
-        static public List<Task> tasks = new List<Task>();
-        static public List<Task> color_tasks = new List<Task>();
-        static object lockObject = new object();
 
         public basic_process(int image_width_o, int image_height_o, int dwnscale_o)
         {
@@ -349,52 +354,47 @@ namespace image_processing
             return color2;
         }
 
+        static object lockObject = new object();
+
         public void GetColor_Process(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
                   , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
         {
-            lock (lockObject)
-            {
+
                 GainOffset_RGB(color, dwnscale, Offset, R_Offset, G_Offset, B_Offset,
                  Gain, R_Gain, G_Gain, B_Gain, gamma);
-            }
+
             Console.Write("タスク完了になってる?\n");
-            Console.Write(tasks.Count);
         }
 
 
-        public void GainOffset_RGB(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
+
+        public void  GainOffset_RGB(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
                   , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
         {
-            List<Task> prctasks = new List<Task>();
-            var prcTask = GainOffset_loop(0, color, dwnscale, Offset, R_Offset, Gain, R_Gain, gamma);
-            prctasks.Add(prcTask);
-            prcTask = GainOffset_loop(1, color, dwnscale, Offset, G_Offset, Gain, G_Gain, gamma);
-            prctasks.Add(prcTask);
-            prcTask = GainOffset_loop(2, color, dwnscale, Offset, B_Offset, Gain, B_Gain, gamma);
-            prctasks.Add(prcTask);
 
-            Task.WhenAll(prctasks);
-            Console.Write("タスク完了\n");
+
+
+            var options = new ParallelOptions();
+            Parallel.Invoke(options,
+                () => GainOffset_loop(0, color, dwnscale, Offset, R_Offset, Gain, R_Gain, gamma),
+                () => GainOffset_loop(1, color, dwnscale, Offset, G_Offset, Gain, G_Gain, gamma),
+                () => GainOffset_loop(2, color, dwnscale, Offset, B_Offset, Gain, B_Gain, gamma)
+                );
+
         }
 
-
-        private async Task<int> GainOffset_loop(int addr_offset, ushort[] color, int dwnscale, double Offset, double C_Offset, double Gain, double C_Gain, double gamma)
+        private void GainOffset_loop(int addr_offset, ushort[] color, int dwnscale, double Offset, double C_Offset, double Gain, double C_Gain, double gamma)
         {
-            await Task.Run(() =>
+            for (int y = 0; y <= image_height / dwnscale - 1; ++y)
             {
-                for (int y = 0; y <= image_height / dwnscale - 1; ++y)
+                for (int x = 0; x <= image_width / dwnscale - 1; ++x)
                 {
-                    for (int x = 0; x <= image_width / dwnscale - 1; ++x)
-                    {
-                        color2[x * 3 + addr_offset + image_width / dwnscale * 3 * y]
-                            = GainOffset_U(color[x * 3 + addr_offset + image_width / dwnscale * 3 * y], dwnscale
-                                                , Offset, C_Offset, Gain, C_Gain, gamma);
-                    }
+                    color2[x * 3 + addr_offset + image_width / dwnscale * 3 * y]
+                        = GainOffset_U(color[x * 3 + addr_offset + image_width / dwnscale * 3 * y], dwnscale
+                                            , Offset, C_Offset, Gain, C_Gain, gamma);
                 }
-            });
+            }
             Console.Write("ループ完\n");
-            int result = 0;
-            return result;
         }
 
         private ushort GainOffset_U(ushort color_in, int dwnscale, double Offset, double C_Offset, double Gain, double C_Gain, double gamma)

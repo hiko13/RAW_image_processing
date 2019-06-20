@@ -38,14 +38,14 @@ namespace image_processing
 
 
         public algorithms(int image_width_o, int image_height_o, int dwnscale_o) {
-            Console.Write("algorithms クラスのコンストラクターが呼ばれました\n");
+            Console.Write("Called constructor of the class algorithms\n");
             image_width = image_width_o;
             image_height = image_height_o;
             dwnscale = dwnscale_o;
         }
 
         ~algorithms(){
-         Console.Write("algorithms クラスのデストラクターが呼ばれました\n");
+         Console.Write("Called destructor of the class algorithms\n");
             Rdemos = null;
             Grdemos = null;
             Gbdemos = null;
@@ -254,7 +254,7 @@ namespace image_processing
             return color;
             }
 
-        public ushort[] ComplessColorImage()
+        public ushort[] ComplessColorImage()//resize the color image
         {
             color_small = new ushort[image_width / dwnscale * 3 * image_height / dwnscale];
 
@@ -271,12 +271,12 @@ namespace image_processing
             return color_small;
         }
 
-            public void Save_Demosaiced_Imege()
+            public void Save_Demosaiced_Imege()//Save images(R-ch image, G-ch image, B-ch image, color image)
             {
                 SaveImage("Rdemos.tif", Rdemos, image_width, image_height, PixelFormats.Gray16);
                 SaveImage("Gdemos.tif", Gdemos, image_width, image_height, PixelFormats.Gray16);
                 SaveImage("Bdemos.tif", Bdemos, image_width, image_height, PixelFormats.Gray16);
-                SaveImage("color.tif", color, image_width, image_height, PixelFormats.Gray16);
+                SaveImage("color.tif", color, image_width, image_height, PixelFormats.Rgb48);
         }
 
             public void SaveImage(string filename, Array bmpData, int width, int height, System.Windows.Media.PixelFormat format, double dpi = 96)
@@ -294,7 +294,7 @@ namespace image_processing
                     bmpData,
                     stride);
 
-                // ファイル名の拡張子
+                // file extention
                 var ext = System.IO.Path.GetExtension(filename).ToLower();
 
                 BitmapEncoder encoder;
@@ -371,16 +371,12 @@ namespace image_processing
         public void  GainOffset_RGB(ushort[] color, int dwnscale, double Offset, double R_Offset, double G_Offset, double B_Offset
                   , double Gain, double R_Gain, double G_Gain, double B_Gain, double gamma)
         {
-
-
-
             var options = new ParallelOptions();
             Parallel.Invoke(options,
                 () => GainOffset_loop(0, color, dwnscale, Offset, R_Offset, Gain, R_Gain, gamma),
                 () => GainOffset_loop(1, color, dwnscale, Offset, G_Offset, Gain, G_Gain, gamma),
                 () => GainOffset_loop(2, color, dwnscale, Offset, B_Offset, Gain, B_Gain, gamma)
                 );
-
         }
 
         private void GainOffset_loop(int addr_offset, ushort[] color, int dwnscale, double Offset, double C_Offset, double Gain, double C_Gain, double gamma)
@@ -410,23 +406,6 @@ namespace image_processing
 
             return color_prc;
         }
-
-
-        //public ushort[] Pixel2ColorArray(double R, double G, double B)
-        //{
-        //    ushort[] color_image = new ushort[image_width / dwnscale * 3 * image_height / dwnscale];
-        //    for (int y = 0; y <= image_height / dwnscale - 1; ++y)
-        //    {
-        //        for (int x = 0; x <= image_width / dwnscale - 1; ++x)
-        //        {
-        //            color_image[x * 3 + image_width / dwnscale * 3 * y] = (ushort)(R);
-        //            color_image[x * 3 + 1 + image_width / dwnscale * 3 * y] = (ushort)(G);
-        //            color_image[x * 3 + 2 + image_width / dwnscale * 3 * y] = (ushort)(B);
-        //        }
-        //    }
-
-        //    return color_image;
-        //}
 
         private double GammaCorrection(double val, double gamma)
         {

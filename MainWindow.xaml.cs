@@ -102,7 +102,7 @@ namespace image_processing
 
                     if (width * height > 1024 * 1024 * 2)
                     {
-                        dwnscale = 4;
+                        dwnscale = 8;
                     }
                     else if (width * height > 1024 * 1024)
                     {
@@ -119,6 +119,7 @@ namespace image_processing
                     color2 = new ushort[width * 3 * height];
                     color_small = new ushort[width * 3 / dwnscale * height / dwnscale];
                     color2_small = new ushort[width * 3 / dwnscale * height / dwnscale];
+                    //color_resized = new ushort[width/16 * dwnscale * height/16];
 
                     PixelFormat format;
 
@@ -180,6 +181,11 @@ namespace image_processing
                     BitmapCreateOptions.PreservePixelFormat,
                     BitmapCacheOption.Default
                     );
+                //BitmapDecoder decoder = new TiffBitmapDecoder(fs, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
+                //BitmapDecoder decoder = new BmpBitmapDecoder(fs, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
+                //BitmapDecoder decoder = new PngBitmapDecoder(fs, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
+
+                //BitmapFrame bitmapFrame = decoder.Frames[0];
 
                 int width = bitmapFrame.PixelWidth;
                 int height = bitmapFrame.PixelHeight;
@@ -316,9 +322,12 @@ namespace image_processing
         //    TextBlock1.Text = ProgressBar1.Value.ToString() + "%";
         //}
 
+        static object lockObject = new object();
 
         private void Color_Small_Image_Update()
         {
+
+
 
             if (color != null)
             {
@@ -326,7 +335,11 @@ namespace image_processing
                 basic_process.GetColor_Process(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
                 Console.Write("タスク完了になってるよねええ?\n");
 
+                lock (lockObject)
+                {
                     color2_small = basic_process.GetColor();
+
+                }
 
                 image_processed.Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -368,9 +381,9 @@ namespace image_processing
         /// ////////////ZOOM and MOVE///////////
 
         private System.Windows.Point _start;
-        private double size_ratio = 1;
+            private double size_ratio = 1;
 
-        private void Image_MouseWheel(object sender, MouseWheelEventArgs e)
+            private void Image_MouseWheel(object sender, MouseWheelEventArgs e)
             {
                 //Set scale
                 const double scale = 1.2;
@@ -406,7 +419,7 @@ namespace image_processing
                 }
             }
 
-        private void Image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+            private void Image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
             {
                 if (e.ChangedButton == MouseButton.Left && e.ClickCount == 2)
                 {
@@ -419,7 +432,7 @@ namespace image_processing
             }
             }
 
-        private void Image_MouseMove(object sender, MouseEventArgs e)
+            private void Image_MouseMove(object sender, MouseEventArgs e)
             {
                 if (image_processed.IsMouseCaptured)
                 {
@@ -432,8 +445,6 @@ namespace image_processing
                 }
                 PositionShow(e.GetPosition(image_processed).X / image_processed.ActualWidth*width
                     , e.GetPosition(image_processed).Y / image_processed.ActualHeight * height);
-            PickUp_PixelValue(e.GetPosition(image_processed).X / image_processed.ActualWidth * width
-                    , e.GetPosition(image_processed).Y / image_processed.ActualHeight * height);
             //PositionShow(image_processed.ActualHeight, image_processed.ActualWidth);
         }
 
@@ -442,7 +453,7 @@ namespace image_processing
                 image_processed.ReleaseMouseCapture();
             }
 
-        private void Window_KeyDown(object sender, KeyEventArgs e)
+            private void Window_KeyDown(object sender, KeyEventArgs e)
             {
                 if (e.Key == Key.Escape)
                 {
@@ -450,7 +461,7 @@ namespace image_processing
                 }
             }
 
-        private void PositionReset()
+            private void PositionReset()
             {
                 var matrix = image_processed.RenderTransform.Value;
                 matrix.M11 = 1.0;
@@ -462,7 +473,7 @@ namespace image_processing
                 image_processed.RenderTransform = new MatrixTransform(matrix);
             }
 
-        private void PositionShow(double X, double Y)
+            private void PositionShow(double X, double Y)
         {
             int Xint = (int)X;
             int Yint = (int)Y;
@@ -478,8 +489,8 @@ namespace image_processing
             string Xpos = X.ToString();
             string Ypos = Y.ToString();
 
-            //string pos_print = "(x,y)=(" + Xpos + "," + Ypos + ")";
-            //Pixel_Position_Start.Text = pos_print;
+            string pos_print = "(x,y)=(" + Xpos + "," + Ypos + ")";
+            Pixel_Position_Start.Text = pos_print;
         }
 
         private void FileSaveButton_Click(object sender, RoutedEventArgs e)
@@ -488,22 +499,6 @@ namespace image_processing
             win.Show();
         }
 
-        private void PickUp_PixelValue(double X, double Y) {
-            ushort R_val, G_val, B_val;
-            int Xint = (int)X / dwnscale;
-            int Yint = (int)Y / dwnscale;
-            
-            R_val = color2_small[Xint * 3 +     Yint * width / dwnscale * 3];
-            G_val = color2_small[Xint * 3 + 1 + Yint * width / dwnscale * 3];
-            B_val = color2_small[Xint * 3 + 2 + Yint * width / dwnscale * 3];
-
-            string R_val_str = R_val.ToString();
-            string G_val_str = G_val.ToString();
-            string B_val_str = B_val.ToString();
-
-            string pos_print = "(R,G,B)=(" + R_val_str + "," + G_val_str + "," + B_val_str + ")";
-            Pixel_Position_Start.Text = pos_print;
-        }
      }
     
 

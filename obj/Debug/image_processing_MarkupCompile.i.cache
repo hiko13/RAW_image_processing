@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-C:\Users\hiko\source\repos\image_processing\image_processing\obj\Debug\
+C:\Users\HIKO\source\repos\raw_image_prc\RAW_image_processing\obj\Debug\
 image_processing
 none
 false
 DEBUG;TRACE
-C:\Users\hiko\source\repos\image_processing\image_processing\App.xaml
+C:\Users\HIKO\source\repos\raw_image_prc\RAW_image_processing\App.xaml
 2-1558589550
 
-111081721501
-19-1151850000
+11519976253
+192099332900
 MainWindow.xaml;SaveImageWindow.xaml;
 
-False
+True
 

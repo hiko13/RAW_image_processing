@@ -42,7 +42,7 @@ namespace image_processing
 
         public Array original_data;
 
-        public basic_process basic_process;
+        public basic_process_unsafe basic_process;
 
         public static int width, height;
         public static int dwnscale = 1;
@@ -52,13 +52,6 @@ namespace image_processing
         {
             InitializeComponent();
         }
-
-        //// MainWindow の Closed 時などに、先に生成した Windwow をクローズします。
-        //private void Window_Closed(object sender, EventArgs e)
-        //{
-        //    App app = (App)App.Current;
-        //    app.m_wnd.Close();
-        //}
 
         private void event_DragEnter(object sender, DragEventArgs e)
         {
@@ -91,14 +84,17 @@ namespace image_processing
                     bitmap.EndInit();
                     stream.Close();
                     //image_original.Source = bitmap; // binding to image control
+                    
+
+                    width = bitmap.PixelWidth;
+                    height = bitmap.PixelHeight;
 
                     original = BitmapFactory.ConvertToPbgra32Format(bitmap);
 
                     // prepare the instance for processed image
                     processed = BitmapFactory.New(original.PixelWidth, original.PixelHeight);
 
-                    width = original.PixelWidth;
-                    height = original.PixelHeight;
+                    
 
                     if (width * height > 1024 * 1024 * 2)
                     {
@@ -134,7 +130,7 @@ namespace image_processing
                     color_small = algorithmes2.ComplessColorImage();
 
                     //Save Images
-                    algorithmes2.Save_Demosaiced_Imege();
+                    //algorithmes2.Save_Demosaiced_Imege();
 
 
 
@@ -151,7 +147,7 @@ namespace image_processing
 
                     }));
 
-                    basic_process = new basic_process(width, height, dwnscale);
+                    basic_process = new basic_process_unsafe(width, height, dwnscale);
 
                     algorithmes2 = null;
 
@@ -316,45 +312,85 @@ namespace image_processing
         //    TextBlock1.Text = ProgressBar1.Value.ToString() + "%";
         //}
 
-
         private void Color_Small_Image_Update()
         {
-
+            
             if (color != null)
             {
 
-                basic_process.GetColor_Process(color_small, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
-                Console.Write("タスク完了になってるよねええ?\n");
+                var bitmap = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
+                var bitmap_buf = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
 
-                    color2_small = basic_process.GetColor();
 
-                image_processed.Dispatcher.BeginInvoke(new Action(() =>
+                //set color_small to bitmap
+                bitmap.Lock();
+                bitmap_buf.Lock();
+                unsafe
                 {
-                    var bitmap = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
-                    bitmap.Lock();
-                    Console.Write("タスク完了になってるよねええaaaaa?\n");
-                    unsafe
+                    ushort* Ptr = (ushort*)bitmap.BackBuffer;
+                    for (int y = 0; y < bitmap.PixelHeight; y++)
                     {
-                        ushort* Ptr = (ushort*)bitmap.BackBuffer;
-                        for (int y = 0; y < bitmap.PixelHeight; y++)
+                        for (int x = 0; x < bitmap.PixelWidth; x++)
                         {
-                            for (int x = 0; x < bitmap.PixelWidth; x++)
-                            {
-                                Ptr[0] = color2_small[3 * x + width / dwnscale * 3 * y];
-                                Ptr[1] = color2_small[3 * x + 1 + width / dwnscale * 3 * y];
-                                Ptr[2] = color2_small[3 * x + 2 + width / dwnscale * 3 * y];
-                                Ptr += 3;
-                            }
+                            Ptr[0] = color_small[3 * x + width / dwnscale * 3 * y];
+                            Ptr[1] = color_small[3 * x + 1 + width / dwnscale * 3 * y];
+                            Ptr[2] = color_small[3 * x + 2 + width / dwnscale * 3 * y];
+                            Ptr += 3;
                         }
-                        bitmap.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap.Width, (int)bitmap.Height));
-                        bitmap.Unlock();
-
-                        image_processed.Source = bitmap;
                     }
+
+                    ushort* Ptr1 = (ushort*)bitmap.BackBuffer;
+                    ushort* Ptr2 = (ushort*)bitmap_buf.BackBuffer;
+                    basic_process.GetColor_Process(Ptr1, Ptr2, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
+
+                }
+                bitmap.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap.Width, (int)bitmap.Height));
+                bitmap_buf.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap_buf.Width, (int)bitmap_buf.Height));
+                bitmap.Unlock();
+                bitmap_buf.Unlock();
+
+                //basic_process.Convolution(color_small, 5, 1, 2, 1);
+                //basic_process.Convolution(color_small, 5, 1, 2, 2);
+                //basic_process.Convolution(color_small, 5, 1, 2, 3);
+
+
+                //bitmap.Lock();
+                //Console.Write("タスク完了になってるよねええaaaaa?\n");
+                //unsafe
+                //{
+                //    ushort* Ptr = (ushort*)bitmap.BackBuffer;
+                //    for (int y = 0; y < bitmap.PixelHeight; y++)
+                //    {
+                //        for (int x = 0; x < bitmap.PixelWidth; x++)
+                //        {
+                //            Ptr[0] = color2_small[3 * x + width / dwnscale * 3 * y];
+                //            Ptr[1] = color2_small[3 * x + 1 + width / dwnscale * 3 * y];
+                //            Ptr[2] = color2_small[3 * x + 2 + width / dwnscale * 3 * y];
+                //            Ptr += 3;
+                //        }
+                //    }
+                //    bitmap.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap.Width, (int)bitmap.Height));
+                //    bitmap.Unlock();
+
+                //    //image_processed.Source = bitmap;
+                //    image_processed.Source = bitmap;
+                // }
+                bitmap_buf.Freeze();
+
+                //image_processed.Dispatcher.BeginInvoke(new Action<WriteableBitmap>((bitmap_show) =>
+                //{
+                //    image_processed.Source = bitmap_show;
+                //}), bitmap_buf);
+                image_processed.Dispatcher.InvokeAsync(new Action(() =>
+                {
+                    image_processed.Source = bitmap_buf;
                 }));
             }
             GC.Collect();
             Console.Write("カラー配列格納完\n");
+
+
+            
 
         }
 

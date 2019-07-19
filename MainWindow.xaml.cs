@@ -21,14 +21,9 @@ namespace image_processing
 {
     public partial class MainWindow : Window
     {
-        WriteableBitmap original;
-        WriteableBitmap processed;
-
         ushort[] color;
-        ushort[] color2;
         ushort[] color_small;
         ushort[] color2_small;
-        //ushort[] color_resized;
 
         public static double Offset;
         public static double R_Offset;
@@ -40,9 +35,9 @@ namespace image_processing
         public static double B_Gain;
         public static double gamma;
 
-        public Array original_data;
-
         public basic_process_unsafe basic_process;
+        public static WriteableBitmap bitmap_color_buf;
+
 
         public static int width, height;
         public static int dwnscale = 1;
@@ -69,11 +64,11 @@ namespace image_processing
                 //ProgressBar_wait.IsIndeterminate = true;
                 //ProgressBar_wait.Visibility = Visibility.Visible;
 
-                await Task.Run(() =>
-                {
-
+                //await Task.Run(() =>
+                //{
                     string filename = ((string[])e.Data.GetData(DataFormats.FileDrop))[0]; // get the file name of dragged file
 
+                // Create a BitmapSource.
                     BitmapImage bitmap = new BitmapImage(); // create the instance of the decoded bitmap image
                     bitmap.BeginInit();
                     FileStream stream = File.OpenRead(filename);
@@ -83,76 +78,133 @@ namespace image_processing
                     //bitmap.UriSource = new Uri(filename); // specify the file for the source of bitmap image
                     bitmap.EndInit();
                     stream.Close();
-                    //image_original.Source = bitmap; // binding to image control
                     
-
                     width = bitmap.PixelWidth;
                     height = bitmap.PixelHeight;
 
-                    original = BitmapFactory.ConvertToPbgra32Format(bitmap);
-
-                    // prepare the instance for processed image
-                    processed = BitmapFactory.New(original.PixelWidth, original.PixelHeight);
-
-                    
 
                     if (width * height > 1024 * 1024 * 2)
                     {
-                        dwnscale = 4;
+                        dwnscale = 1;
                     }
                     else if (width * height > 1024 * 1024)
                     {
-                        dwnscale = 4;
+                        dwnscale = 1;
                     }
                     else
                     {
                         dwnscale = 1;
                     }
-
-
-                    algorithms algorithmes2 = new algorithms(width, height, dwnscale);
-                    color = new ushort[width * 3 * height];
-                    color2 = new ushort[width * 3 * height];
-                    color_small = new ushort[width * 3 / dwnscale * height / dwnscale];
-                    color2_small = new ushort[width * 3 / dwnscale * height / dwnscale];
-
+                    
                     PixelFormat format;
+                    ushort[] original_data = FileConvertArray(filename, out format);
 
-                    original_data = FileConvertArray(filename, out format);
+                //Create WriteableBitmap from BitmapSource
+                var bitmap_raw_buf = new WriteableBitmap(width, height, 96, 96, PixelFormats.Gray16, null);
 
-                    //Split in Color Channel
-                    algorithmes2.Ch_split(original_data);
+                
 
-                    //Demosaic
-                    color = algorithmes2.Demosaic();
+                ///////////////////////////////////////////////////////////////
+                var bitmap_pad_buf = new WriteableBitmap(width+2, height+2, 96, 96, PixelFormats.Gray16, null);//+2 is for padding
+                bitmap_color_buf = new WriteableBitmap(width, height, 96, 96, PixelFormats.Rgb48, null);
 
-                    //Small Color Image
-                    color_small = algorithmes2.ComplessColorImage();
+                post_process post_Process = new post_process();
+                post_Process.width = width;
+                post_Process.height = height;
 
-                    //Save Images
-                    //algorithmes2.Save_Demosaiced_Imege();
+                bitmap_pad_buf.Lock();
+                bitmap_color_buf.Lock();
+                unsafe
+                {
+                    ushort* padPtr = (ushort*)bitmap_pad_buf.BackBuffer;
 
+                    padPtr += width+2;
 
-
-
-
-                    image_processed.Dispatcher.BeginInvoke(
-                    new Action(() =>
+                    for (int y = 0; y < height; y++)
                     {
-                        //Show Color Image
-                        var colorBitmap = BitmapSource.Create(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null, color_small, 16 * 3 * width / dwnscale / 8);
+                        padPtr++;
+                        for (int x = 0; x < width; x++)
+                        {
+                            padPtr[0] = original_data[x+y*width];
+                            padPtr++;
+                        }
+                        padPtr++;
+                    }
 
-                        //image_processed.Source = resized_colorBitmap;
-                        image_processed.Source = colorBitmap;
+                    ushort* colPtr = (ushort*)bitmap_color_buf.BackBuffer;
+                    padPtr = (ushort*)bitmap_pad_buf.BackBuffer;
+                    padPtr += width + 2;
+                    post_Process.demosaic(padPtr,colPtr);
 
-                    }));
+                }
+                bitmap_pad_buf.AddDirtyRect(new Int32Rect(0, 0, (int)width+2, (int)height+2));
+                bitmap_pad_buf.Unlock();
+                bitmap_color_buf.AddDirtyRect(new Int32Rect(0, 0, (int)width, (int)height));
+                bitmap_color_buf.Unlock();
 
-                    basic_process = new basic_process_unsafe(width, height, dwnscale);
+                //image_processed.Dispatcher.BeginInvoke(
+                //new Action(() =>
+                //{
+                image_processed.Source = bitmap_color_buf;
 
-                    algorithmes2 = null;
 
 
-                });
+                //}));
+
+                //  post_process post_process = new post_process();
+                //  post_process.width = width / dwnscale;
+                //    post_process.height = height / dwnscale;
+
+                //bitmap_raw_buf.Lock();
+                //    bitmap_color_buf.Lock();
+                //    unsafe
+                //    {
+                //        ushort* rawPtr = (ushort*)bitmap_raw_buf.BackBuffer;
+                //        ushort* colPtr = (ushort*)bitmap_color_buf.BackBuffer;
+
+                //        post_process.demosaic(rawPtr, colPtr);
+                //    }
+                //   bitmap_raw_buf.Unlock();
+                //    bitmap_color_buf.Unlock();
+
+
+                //    ///////////////////////////////////////////////////////////////
+
+
+                //    //Split in Color Channel
+                //    //algorithmes2.Ch_split(original_data);
+
+                //    //Demosaic
+                //    //color = algorithmes2.Demosaic();
+
+                //    //Small Color Image
+                //    //color_small = algorithmes2.ComplessColorImage();
+
+                //    //Save Images
+                //    //algorithmes2.Save_Demosaiced_Imege();
+
+
+
+
+
+                //    //image_processed.Dispatcher.BeginInvoke(
+                //    //new Action(() =>
+                //    //{
+                //        //Show Color Image
+                //        //var colorBitmap = BitmapSource.Create(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null, color_small, 16 * 3 * width / dwnscale / 8);
+
+                //        //image_processed.Source = resized_colorBitmap;
+                //        //image_processed.Source = colorBitmap; 
+                //        image_processed.Source = bitmap_color_buf;
+
+                //    //}));
+
+                //    basic_process = new basic_process_unsafe(width, height, dwnscale);
+
+                //    algorithmes2 = null;
+
+
+                ////});
 
 
                 //Title_Border.Visibility = Visibility.Hidden;
@@ -165,10 +217,10 @@ namespace image_processing
 
 
 
-        private Array FileConvertArray(string filename, out PixelFormat format)
+        private ushort[] FileConvertArray(string filename, out PixelFormat format)
 
         {
-            Array arr;
+            ushort[] arr;
             using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
                 BitmapFrame bitmapFrame = BitmapFrame.Create(
@@ -195,7 +247,7 @@ namespace image_processing
 
                 else
                 {
-                    arr = new byte[stride * height];
+                    arr = new ushort[stride * height];
                 }
 
                 // 輝度データを配列へコピー
@@ -315,72 +367,52 @@ namespace image_processing
         private void Color_Small_Image_Update()
         {
             
-            if (color != null)
+            if (bitmap_color_buf != null)
             {
 
                 var bitmap = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
                 var bitmap_buf = new WriteableBitmap(width / dwnscale, height / dwnscale, 96, 96, PixelFormats.Rgb48, null);
-
+                //bitmap_color_buf
 
                 //set color_small to bitmap
                 bitmap.Lock();
+                bitmap_color_buf.Lock();
                 bitmap_buf.Lock();
                 unsafe
                 {
-                    ushort* Ptr = (ushort*)bitmap.BackBuffer;
-                    for (int y = 0; y < bitmap.PixelHeight; y++)
-                    {
-                        for (int x = 0; x < bitmap.PixelWidth; x++)
-                        {
-                            Ptr[0] = color_small[3 * x + width / dwnscale * 3 * y];
-                            Ptr[1] = color_small[3 * x + 1 + width / dwnscale * 3 * y];
-                            Ptr[2] = color_small[3 * x + 2 + width / dwnscale * 3 * y];
-                            Ptr += 3;
-                        }
-                    }
+                    //ushort* Ptr = (ushort*)bitmap.BackBuffer;
+                    //for (int y = 0; y < bitmap.PixelHeight; y++)
+                    //{
+                    //    for (int x = 0; x < bitmap.PixelWidth; x++)
+                    //    {
+                    //        Ptr[0] = color_small[3 * x + width / dwnscale * 3 * y];
+                    //        Ptr[1] = color_small[3 * x + 1 + width / dwnscale * 3 * y];
+                    //        Ptr[2] = color_small[3 * x + 2 + width / dwnscale * 3 * y];
+                    //        Ptr += 3;
+                    //    }
+                    //}
 
-                    ushort* Ptr1 = (ushort*)bitmap.BackBuffer;
+                    //ushort* Ptr1 = (ushort*)bitmap.BackBuffer;
+                    ushort* Ptr1 = (ushort*)bitmap_color_buf.BackBuffer;
                     ushort* Ptr2 = (ushort*)bitmap_buf.BackBuffer;
                     basic_process.GetColor_Process(Ptr1, Ptr2, dwnscale, Offset, R_Offset, G_Offset, B_Offset, Gain, R_Gain, G_Gain, B_Gain, gamma);
 
                 }
                 bitmap.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap.Width, (int)bitmap.Height));
                 bitmap_buf.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap_buf.Width, (int)bitmap_buf.Height));
+                bitmap_color_buf.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap_buf.Width, (int)bitmap_buf.Height));
                 bitmap.Unlock();
                 bitmap_buf.Unlock();
+                bitmap_color_buf.Unlock();
 
                 //basic_process.Convolution(color_small, 5, 1, 2, 1);
                 //basic_process.Convolution(color_small, 5, 1, 2, 2);
                 //basic_process.Convolution(color_small, 5, 1, 2, 3);
 
 
-                //bitmap.Lock();
-                //Console.Write("タスク完了になってるよねええaaaaa?\n");
-                //unsafe
-                //{
-                //    ushort* Ptr = (ushort*)bitmap.BackBuffer;
-                //    for (int y = 0; y < bitmap.PixelHeight; y++)
-                //    {
-                //        for (int x = 0; x < bitmap.PixelWidth; x++)
-                //        {
-                //            Ptr[0] = color2_small[3 * x + width / dwnscale * 3 * y];
-                //            Ptr[1] = color2_small[3 * x + 1 + width / dwnscale * 3 * y];
-                //            Ptr[2] = color2_small[3 * x + 2 + width / dwnscale * 3 * y];
-                //            Ptr += 3;
-                //        }
-                //    }
-                //    bitmap.AddDirtyRect(new Int32Rect(0, 0, (int)bitmap.Width, (int)bitmap.Height));
-                //    bitmap.Unlock();
-
-                //    //image_processed.Source = bitmap;
-                //    image_processed.Source = bitmap;
-                // }
                 bitmap_buf.Freeze();
 
-                //image_processed.Dispatcher.BeginInvoke(new Action<WriteableBitmap>((bitmap_show) =>
-                //{
-                //    image_processed.Source = bitmap_show;
-                //}), bitmap_buf);
+
                 image_processed.Dispatcher.InvokeAsync(new Action(() =>
                 {
                     image_processed.Source = bitmap_buf;
@@ -388,9 +420,6 @@ namespace image_processing
             }
             GC.Collect();
             Console.Write("カラー配列格納完\n");
-
-
-            
 
         }
 
@@ -403,7 +432,7 @@ namespace image_processing
 
         /// ////////////ZOOM and MOVE///////////
 
-        private System.Windows.Point _start;
+        private System.Windows.Point _start, _end;
         private double size_ratio = 1;
 
         private void Image_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -459,13 +488,13 @@ namespace image_processing
             {
                 if (image_processed.IsMouseCaptured)
                 {
-                    var matrix = image_processed.RenderTransform.Value;
+                var matrix = image_processed.RenderTransform.Value;
 
-                    Vector v = _start - e.GetPosition(image_processed);
-                    PositionGet_start(v.X, v.X);
-                    matrix.Translate(-v.X, -v.Y);
-                    image_processed.RenderTransform = new MatrixTransform(matrix);
-                }
+                Vector v = _start - e.GetPosition(image_processed);
+                PositionGet_start(v.X, v.X);
+                matrix.Translate(-v.X, -v.Y);
+                image_processed.RenderTransform = new MatrixTransform(matrix);
+            }
                 PositionShow(e.GetPosition(image_processed).X / image_processed.ActualWidth*width
                     , e.GetPosition(image_processed).Y / image_processed.ActualHeight * height);
             PickUp_PixelValue(e.GetPosition(image_processed).X / image_processed.ActualWidth * width
@@ -529,16 +558,16 @@ namespace image_processing
             int Xint = (int)X / dwnscale;
             int Yint = (int)Y / dwnscale;
             
-            R_val = color2_small[Xint * 3 +     Yint * width / dwnscale * 3];
-            G_val = color2_small[Xint * 3 + 1 + Yint * width / dwnscale * 3];
-            B_val = color2_small[Xint * 3 + 2 + Yint * width / dwnscale * 3];
+            //R_val = color2_small[Xint * 3 +     Yint * width / dwnscale * 3];
+            //G_val = color2_small[Xint * 3 + 1 + Yint * width / dwnscale * 3];
+            //B_val = color2_small[Xint * 3 + 2 + Yint * width / dwnscale * 3];
 
-            string R_val_str = R_val.ToString();
-            string G_val_str = G_val.ToString();
-            string B_val_str = B_val.ToString();
+            //string R_val_str = R_val.ToString();
+            //string G_val_str = G_val.ToString();
+            //string B_val_str = B_val.ToString();
 
-            string pos_print = "(R,G,B)=(" + R_val_str + "," + G_val_str + "," + B_val_str + ")";
-            Pixel_Position_Start.Text = pos_print;
+            //string pos_print = "(R,G,B)=(" + R_val_str + "," + G_val_str + "," + B_val_str + ")";
+            //Pixel_Position_Start.Text = pos_print;
         }
      }
     

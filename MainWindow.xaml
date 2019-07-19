@@ -168,7 +168,6 @@
 
 
         <Border  Background="#333" Grid.Row="0" Grid.Column="1"  Grid.RowSpan="4" ClipToBounds="True" Grid.ColumnSpan="2" Margin="0,0,234.5,0">
-
             <Image Name="image_processed" 
                    MouseWheel="Image_MouseWheel" 
                    MouseLeftButtonDown="Image_MouseLeftButtonDown" 

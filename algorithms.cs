@@ -20,6 +20,336 @@ using System.Threading;
 namespace image_processing
 {
 
+    public class post_process
+    {
+        public int width { get; set; }
+        public int height { get; set; }
+
+        private ushort[] color_image { get; set; }
+
+        object lockObject = new object();
+
+        public unsafe void demosaic(ushort* rawPtr, ushort* colPtr)
+        {
+            var options = new ParallelOptions();
+            ushort* init_rawPtr=rawPtr;
+            ushort* init_colPtr = colPtr;
+            //Parallel.Invoke(options,
+            //    () => R_demos(rawPtr,colPtr),
+            //    () => G_demos(rawPtr, colPtr),
+            //    () => B_demos(rawPtr, colPtr)
+            //    );
+
+            R_demos(rawPtr, colPtr);
+            rawPtr = init_rawPtr;
+            colPtr = init_colPtr;
+            G_demos(rawPtr, colPtr);
+            rawPtr = init_rawPtr;
+            colPtr = init_colPtr;
+            B_demos(rawPtr, colPtr);
+            rawPtr = init_rawPtr;
+            colPtr = init_colPtr;
+        }
+
+        public unsafe void R_demos(ushort* rawPtr, ushort* colPtr)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                rawPtr++;
+                for (int x = 0; x < width; x+=2) {
+                    if (IsEven(y))
+                    {
+                        if (x == width - 2)
+                        {
+                            colPtr[0] = Filt_ave(rawPtr++, kernel1);
+                            colPtr[3] = Filt_ave(rawPtr++, kernel3);
+                            colPtr += 6;
+                        }
+                        else
+                        {
+                            colPtr[0] = Filt_ave(rawPtr++, kernel1);
+                            colPtr[3] = Filt_ave(rawPtr++, kernel2);
+                            colPtr += 6;
+                        }
+                    }
+                    else
+                    {
+                        if (y == height - 1)//last raw
+                        {
+                            if (x == width - 2)//last column
+                            {
+                                colPtr[0] = Filt_ave(rawPtr++, kernel7);
+                                colPtr[3] = Filt_ave(rawPtr++, kernel9);
+                                colPtr += 6;
+                            }
+                            else
+                            {
+                                colPtr[0] = Filt_ave(rawPtr++, kernel7);
+                                colPtr[3] = Filt_ave(rawPtr++, kernel8);
+                                colPtr += 6;
+                            }
+                        }
+                        else
+                        {
+                            if (x == width - 2)//last column
+                            {
+                                colPtr[0] = Filt_ave(rawPtr++, kernel4);
+                                colPtr[3] = Filt_ave(rawPtr++, kernel6);
+                                colPtr += 6;
+                            }
+                            else
+                            {
+                                colPtr[0] = Filt_ave(rawPtr++, kernel4);
+                                colPtr[3] = Filt_ave(rawPtr++, kernel5);
+                                colPtr += 6;
+                            }
+                        }
+                    }
+                }
+                rawPtr++;
+            }
+
+        }
+        public unsafe void G_demos(ushort* rawPtr, ushort* colPtr)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                rawPtr++;
+                for (int x = 0; x < width; x += 2)
+                {
+                    if (IsEven(y))
+                    {
+                        if (y == 0)//first raw
+                        {
+                            if (x == 0)//first column
+                            {
+                                colPtr[1] = Filt_ave(rawPtr++, kernel10);
+                                colPtr[4] = Filt_ave(rawPtr++, kernel1);
+                                colPtr += 6;
+                            }
+                            else
+                            {
+                                colPtr[1] = Filt_ave(rawPtr++, kernel11);
+                                colPtr[4] = Filt_ave(rawPtr++, kernel1);
+                                colPtr += 6;
+                            }
+                        }
+                        else
+                        {
+                            if (x == 0)//first column
+                            {
+                                colPtr[1] = Filt_ave(rawPtr++, kernel14);
+                                colPtr[4] = Filt_ave(rawPtr++, kernel1);
+                                colPtr += 6;
+                            }
+                            else
+                            {
+                                colPtr[1] = Filt_ave(rawPtr++, kernel11);
+                                colPtr[4] = Filt_ave(rawPtr++, kernel1);
+                                colPtr += 6;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (y == height - 1)//last raw
+                        {
+                            if(x == width - 2)//last column
+                            {
+                                colPtr[1] = Filt_ave(rawPtr++, kernel1);
+                                colPtr[4] = Filt_ave(rawPtr++, kernel15);
+                                colPtr += 6;
+                            }
+                            else
+                            {
+                                colPtr[1] = Filt_ave(rawPtr++, kernel1);
+                                colPtr[4] = Filt_ave(rawPtr++, kernel13);
+                                colPtr += 6;
+                            }
+                        }
+                        else
+                        {
+                            if (x == width - 2)//last column
+                            {
+                                colPtr[1] = Filt_ave(rawPtr++, kernel1);
+                                colPtr[4] = Filt_ave(rawPtr++, kernel13);
+                                colPtr += 6;
+                            }
+                            else
+                            {
+                                colPtr[1] = Filt_ave(rawPtr++, kernel1);
+                                colPtr[4] = Filt_ave(rawPtr++, kernel12);
+                                colPtr += 6;
+                            }
+                        }
+                    }
+                }
+                rawPtr++;
+            }
+        }
+        public unsafe void B_demos(ushort* rawPtr, ushort* colPtr)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                rawPtr++;
+                for (int x = 0; x < width; x += 2)
+                {
+                    if (IsEven(y))
+                    {
+                        if (y == 0)//first raw
+                        {
+                            if (x == 0)//first column
+                            {
+                                colPtr[2] = Filt_ave(rawPtr++, kernel17);
+                                colPtr[5] = Filt_ave(rawPtr++, kernel18);
+                                colPtr += 6;
+                            }
+                            else
+                            {
+                                colPtr[2] = Filt_ave(rawPtr++, kernel19);
+                                colPtr[5] = Filt_ave(rawPtr++, kernel18);
+                                colPtr += 6;
+                            }
+                        }
+                        else
+                        {
+                            if (x == 0)//first column
+                            {
+                                colPtr[2] = Filt_ave(rawPtr++, kernel20);
+                                colPtr[5] = Filt_ave(rawPtr++, kernel4);
+                                colPtr += 6;
+                            }
+                            else
+                            {
+                                colPtr[2] = Filt_ave(rawPtr++, kernel5);
+                                colPtr[5] = Filt_ave(rawPtr++, kernel4);
+                                colPtr += 6;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (x == 0)//first column
+                        {
+                            colPtr[2] = Filt_ave(rawPtr++, kernel21);
+                            colPtr[5] = Filt_ave(rawPtr++, kernel16);
+                            colPtr += 6;
+                        }
+                        else
+                        {
+                            colPtr[2] = Filt_ave(rawPtr++, kernel2);
+                            colPtr[5] = Filt_ave(rawPtr++, kernel16);
+                            colPtr += 6;
+                        }
+                    }
+                }
+                rawPtr++;
+            }
+        }
+
+        private unsafe ushort Filt_ave(ushort* rawPtr, int[] kernel)
+        {
+            ushort val;
+            int sum = kernel.Sum();
+                val = (ushort)((rawPtr[-1 - width-2] * kernel[0] + rawPtr[0 - width - 2] * kernel[1] + rawPtr[1 - width - 2] * kernel[2]
+                             + rawPtr[-1] * kernel[3] + rawPtr[0] * kernel[4] + rawPtr[1] * kernel[5]
+                             + rawPtr[-1 + width - 2] * kernel[6] + rawPtr[0 + width - 2] * kernel[7] + rawPtr[1 + width - 2] * kernel[8]) / sum);
+            return val;
+        }
+
+        int[] kernel1 = {0,0,0,
+                         0,1,0,
+                         0,0,0};
+
+        int[] kernel2 = {0,0,0,
+                         1,0,1,
+                         0,0,0};
+
+        int[] kernel3 = {0,0,0,
+                         1,0,0,
+                         0,0,0};
+
+        int[] kernel4 = {0,1,0,
+                         0,0,0,
+                         0,1,0};
+
+        int[] kernel5 = {1,0,1,
+                         0,0,0,
+                         1,0,1};
+
+        int[] kernel6 = {1,0,0,
+                         0,0,0,
+                         1,0,0};
+
+        int[] kernel7 = {0,1,0,
+                         0,0,0,
+                         0,0,0};
+
+        int[] kernel8 = {1,0,1,
+                         0,0,0,
+                         0,0,0};
+
+        int[] kernel9 = {1,0,0,
+                         0,0,0,
+                         0,0,0};
+
+        int[] kernel10 = {0,0,0,
+                          0,0,1,
+                          0,1,0};
+
+        int[] kernel11 = {0,0,0,
+                          1,0,1,
+                          0,1,0};
+
+        int[] kernel12 = {0,1,0,
+                          1,0,1,
+                          0,1,0};
+
+        int[] kernel13 = {0,1,0,
+                          1,0,0,
+                          0,1,0};
+
+        int[] kernel14 = {0,1,0,
+                          0,0,1,
+                          0,1,0};
+
+        int[] kernel15 = {0,1,0,
+                          1,0,0,
+                          0,0,0};
+
+        int[] kernel16 = {0,1,0,
+                          1,0,1,
+                          0,0,0};
+
+        int[] kernel17 = {0,0,0,
+                          0,0,0,
+                          0,0,1};
+
+        int[] kernel18 = {0,0,0,
+                          0,0,0,
+                          0,1,0};
+
+        int[] kernel19 = {0,0,0,
+                          0,0,0,
+                          1,0,1};
+
+        int[] kernel20 = {0,0,1,
+                          0,0,0,
+                          0,0,1};
+
+        int[] kernel21 = {0,0,0,
+                          0,0,1,
+                          0,0,0};
+
+
+
+        private bool IsEven(int val)
+        {
+            return val % 2 == 0;
+        }
+
+    }
+
     public class algorithms
     {
         static private int image_width;
